@@ -1,7 +1,15 @@
 from flask import Flask, abort, request, session
 from .config import Config
 from .extensions import db, migrate, limiter
-from .utils import get_activity_color, ACTIVITY_TYPE_DEFAULTS, get_activity_type_defs, get_activity_type_order, get_team_like_types
+from .utils import (
+    ACTIVITY_TYPE_DEFAULTS,
+    can_manage_agenda,
+    can_view_agenda,
+    get_activity_color,
+    get_activity_type_defs,
+    get_activity_type_order,
+    get_team_like_types,
+)
 from .activity_colors import get_activity_color_map
 from datetime import timedelta
 from .routes import main, auth, admin
@@ -10,7 +18,7 @@ import json
 from dotenv import load_dotenv
 import logging
 import secrets
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.exc import OperationalError
 import sys
 from pathlib import Path
@@ -68,7 +76,9 @@ def create_app(config_class=Config):
             'ACTIVITY_TYPE_DEFS': activity_defs,
             'ACTIVITY_TYPE_ORDER': get_activity_type_order(),
             'TEAM_LIKE_TYPES': get_team_like_types(),
-            'ACTIVITY_TYPE_BEHAVIORS': {key: value.get('behavior') for key, value in activity_defs.items()}
+            'ACTIVITY_TYPE_BEHAVIORS': {key: value.get('behavior') for key, value in activity_defs.items()},
+            'can_manage_agenda': can_manage_agenda,
+            'can_view_agenda': can_view_agenda,
         }
 
     def generate_csrf_token():
@@ -160,6 +170,36 @@ def create_app(config_class=Config):
         if changed:
             db.session.commit()
 
+    def ensure_user_auth_claim_columns():
+        inspector = inspect(db.engine)
+        if 'user' not in inspector.get_table_names():
+            return
+        existing_columns = {column['name'] for column in inspector.get_columns('user')}
+        dialect = db.engine.dialect.name
+        bool_false = 'false' if dialect == 'postgresql' else '0'
+        statements = []
+        if 'auth_user_id' not in existing_columns:
+            statements.append('ALTER TABLE "user" ADD COLUMN auth_user_id INTEGER')
+        if 'platform_role' not in existing_columns:
+            statements.append("ALTER TABLE \"user\" ADD COLUMN platform_role VARCHAR(20) DEFAULT 'user'")
+        if 'display_name' not in existing_columns:
+            statements.append('ALTER TABLE "user" ADD COLUMN display_name VARCHAR(120)')
+        if 'email' not in existing_columns:
+            statements.append('ALTER TABLE "user" ADD COLUMN email VARCHAR(255)')
+        if 'profile_complete' not in existing_columns:
+            statements.append(f'ALTER TABLE "user" ADD COLUMN profile_complete BOOLEAN NOT NULL DEFAULT {bool_false}')
+        if 'memberships_json' not in existing_columns:
+            statements.append("ALTER TABLE \"user\" ADD COLUMN memberships_json TEXT NOT NULL DEFAULT '[]'")
+        if 'permissions_json' not in existing_columns:
+            statements.append("ALTER TABLE \"user\" ADD COLUMN permissions_json TEXT NOT NULL DEFAULT '[]'")
+        if 'claims_json' not in existing_columns:
+            statements.append("ALTER TABLE \"user\" ADD COLUMN claims_json TEXT NOT NULL DEFAULT '{}'")
+        for statement in statements:
+            db.session.execute(text(statement))
+        if statements:
+            db.session.commit()
+            app.logger.info('Applied agenda user auth-claim schema updates.')
+
     with app.app_context():
         if app.config.get('AUTO_CREATE_DB'):
             try:
@@ -168,6 +208,7 @@ def create_app(config_class=Config):
                 if 'already exists' not in str(exc).lower():
                     raise
                 app.logger.warning('DB init race condition detected; continuing.')
+            ensure_user_auth_claim_columns()
             # Backward-compat shim for existing deployments that do not run
             # `flask db upgrade`. New installations use Alembic migrations.
             if db.engine.dialect.name == 'sqlite':

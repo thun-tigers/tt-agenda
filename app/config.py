@@ -14,7 +14,7 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get('SECRET_KEY')
-    AUTH_BASE_URL = os.environ.get('AUTH_BASE_URL', 'http://localhost:8086').rstrip('/')
+    AUTH_BASE_URL = os.environ.get('AUTH_BASE_URL', 'http://localhost:8085').rstrip('/')
     WEBHOOK_ENABLED = os.environ.get('WEBHOOK_ENABLED', 'false').lower() == 'true'
     WEBHOOK_URL = os.environ.get('WEBHOOK_URL', 'https://n8n.3624.ch/webhook/messaging')
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO').upper()

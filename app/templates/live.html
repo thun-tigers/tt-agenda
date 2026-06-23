@@ -243,7 +243,7 @@
             <a href="{{ url_for('main.index') }}" class="px-4 py-2.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 font-medium rounded-lg transition flex items-center justify-center gap-2">
                 <i class="bi bi-house"></i>Zur Übersicht
             </a>
-            {% if session.get('user_role') == 'admin' %}
+            {% if can_manage_agenda() %}
             <form method="POST" action="{{ url_for('admin.create_training_instance', id=current_training.id) }}" class="contents">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="date" value="{{ (current_date or now.date()).strftime('%Y-%m-%d') }}">

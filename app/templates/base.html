@@ -106,7 +106,7 @@
                     <a href="{{ url_for('main.live') }}" class="px-3 py-2 text-sm font-medium {% if training_status == 'running' %}text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30{% else %}text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700{% endif %} rounded-lg transition">
                         <i class="bi bi-broadcast mr-2"></i><span class="hidden lg:inline">Live</span>
                     </a>
-                    {% if session.get('user_role') == 'admin' %}
+                    {% if can_manage_agenda() %}
                     <div class="relative group">
                         <button class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition flex items-center gap-2">
                             <i class="bi bi-gear-fill"></i><span class="hidden lg:inline">Admin</span>
@@ -144,7 +144,7 @@
                     <div class="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-600">
                         <div class="hidden sm:block">
                             <div class="text-sm font-medium text-slate-900 dark:text-white">{{ session.get('username') }}</div>
-                            {% if session.get('user_role') == 'admin' %}
+                            {% if can_manage_agenda() %}
                             <div class="text-xs text-indigo-600 dark:text-indigo-400">Administrator</div>
                             {% endif %}
                         </div>
@@ -185,7 +185,7 @@
                     <span class="ml-auto inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                     {% endif %}
                 </a>
-                {% if session.get('user_role') == 'admin' %}
+                {% if can_manage_agenda() %}
                 <div class="pt-3 mt-3 border-t border-slate-200 dark:border-slate-600">
                     <div class="px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Administration</div>
                     <a href="{{ url_for('admin.admin_trainings') }}" class="flex items-center gap-3 px-4 py-3 text-base font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 transition active:bg-indigo-100 dark:active:bg-slate-600">
@@ -217,7 +217,7 @@
                     <div class="px-4 py-2 flex items-center justify-between">
                         <div>
                             <div class="text-sm font-medium text-slate-900 dark:text-white">{{ session.get('username') }}</div>
-                            {% if session.get('user_role') == 'admin' %}
+                            {% if can_manage_agenda() %}
                             <div class="text-xs text-indigo-600 dark:text-indigo-400">Administrator</div>
                             {% endif %}
                         </div>

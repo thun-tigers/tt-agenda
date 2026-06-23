@@ -83,12 +83,32 @@ class ActivityType(db.Model):
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    auth_user_id = db.Column(db.Integer, unique=True, nullable=True, index=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), default='user')
+    platform_role = db.Column(db.String(20), default='user')
+    display_name = db.Column(db.String(120))
+    email = db.Column(db.String(255))
+    profile_complete = db.Column(db.Boolean, nullable=False, default=False)
+    memberships_json = db.Column(JsonType, nullable=False, default=list)
+    permissions_json = db.Column(JsonType, nullable=False, default=list)
+    claims_json = db.Column(JsonType, nullable=False, default=dict)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def sync_from_sso_claims(self, payload):
+        self.auth_user_id = int(payload['sub'])
+        self.username = (payload.get('username') or self.username).strip()
+        self.role = payload.get('service_role') or payload.get('role') or 'user'
+        self.platform_role = payload.get('platform_role') or 'user'
+        self.display_name = payload.get('display_name') or self.username
+        self.email = payload.get('email')
+        self.profile_complete = bool(payload.get('profile_complete'))
+        self.memberships_json = payload.get('memberships') or []
+        self.permissions_json = payload.get('permissions') or []
+        self.claims_json = payload

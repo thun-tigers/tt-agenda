@@ -15,7 +15,7 @@ services:
       - FLASK_ENV=production
       - SECRET_KEY=${SECRET_KEY}
       - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI:-postgresql+psycopg://tt_agenda:tt_agenda_password@tt-postgres-agenda:5432/tt_agenda}
-      - AUTH_BASE_URL=${AUTH_BASE_URL:-http://localhost:8086}
+      - AUTH_BASE_URL=${AUTH_BASE_URL:-http://localhost:8085}
       - SSO_SHARED_SECRET=${SSO_SHARED_SECRET:-tt-sso-dev-secret-change-me}
       - SSO_EXPECTED_AUDIENCE=${SSO_EXPECTED_AUDIENCE:-tt-agenda}
       - SSO_AUTO_PROVISION_USERS=${SSO_AUTO_PROVISION_USERS:-true}

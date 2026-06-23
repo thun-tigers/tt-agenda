@@ -128,13 +128,45 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+def get_user_permissions():
+    permissions = session.get('permissions') or []
+    return permissions if isinstance(permissions, list) else []
+
+
+def get_user_memberships():
+    memberships = session.get('memberships') or []
+    return memberships if isinstance(memberships, list) else []
+
+
+def can_manage_agenda():
+    if session.get('user_role') == 'admin' or session.get('platform_role') == 'admin':
+        return True
+    permissions = get_user_permissions()
+    if '*' in permissions or 'agenda:admin' in permissions or 'agenda:write' in permissions:
+        return True
+    return any(
+        permission.startswith('team:') and (permission.endswith(':write') or permission.endswith(':admin'))
+        for permission in permissions
+    )
+
+
+def can_view_agenda():
+    if can_manage_agenda():
+        return True
+    permissions = get_user_permissions()
+    if 'agenda:read' in permissions or 'profile:read' in permissions:
+        return True
+    return any(permission.startswith('team:') and permission.endswith(':read') for permission in permissions)
+
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
             flash('Bitte melden Sie sich an.', 'warning')
             return redirect(url_for('auth.login', next=request.url))
-        if session.get('user_role') != 'admin':
+        if not can_manage_agenda():
             flash('Sie haben keine Berechtigung für diese Aktion.', 'danger')
             return redirect(url_for('main.index'))
         return f(*args, **kwargs)
