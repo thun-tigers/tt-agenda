@@ -860,7 +860,12 @@ def copy_training_instance(id):
 @bp.route('/activity/add', methods=['GET', 'POST'])
 @admin_required
 def add_activity():
-    training_id = request.args.get('training_id') or (request.form.get('training_id') if request.method == 'POST' else None)
+    training_id_raw = request.args.get('training_id') or (request.form.get('training_id') if request.method == 'POST' else None)
+    try:
+        training_id = int(training_id_raw) if training_id_raw is not None else None
+    except (TypeError, ValueError):
+        training_id = None
+
     if not training_id:
         flash('Training-ID fehlt', 'error')
         return redirect(url_for('main.index'))
