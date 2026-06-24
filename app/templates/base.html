@@ -63,6 +63,20 @@
     
     <style>
         * { font-family: 'Inter', sans-serif; }
+        form :is(input[type='text'], input[type='email'], input[type='password'], input[type='search'], input[type='date'], input[type='time'], input[type='number'], select, textarea) {
+            padding-top: 0.55rem !important;
+            padding-bottom: 0.55rem !important;
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+            font-size: 0.875rem !important;
+            line-height: 1.25rem !important;
+            border-radius: 0.75rem !important;
+        }
+        form label {
+            font-size: 0.75rem;
+            line-height: 1rem;
+            margin-bottom: 0.25rem;
+        }
         html { scroll-behavior: smooth; }
         
         /* Aktivitätsfarben als CSS-Variablen */
@@ -122,6 +136,25 @@
 
                 <!-- Right -->
                 <div class="flex items-center gap-2 sm:gap-4">
+                    {% if session.get('user_id') %}
+                        {% if available_teams|length > 1 %}
+                        <form method="POST" action="{{ url_for('auth.switch_team') }}" class="hidden md:block">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="next" value="{{ request.full_path }}">
+                            <label class="sr-only" for="teamSelect">Mannschaft wählen</label>
+                            <select id="teamSelect" name="team_code" onchange="this.form.submit()" class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                {% for team in available_teams %}
+                                <option value="{{ team.code }}" {{ 'selected' if team.code == active_team_code else '' }}>{{ team.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                        {% else %}
+                        <span class="hidden md:inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                            <i class="bi bi-people"></i><span>{{ active_team_name }}</span>
+                        </span>
+                        {% endif %}
+                    {% endif %}
+
                     <a href="{{ auth_dashboard_url }}" class="hidden md:inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-indigo-200 dark:hover:border-indigo-700 transition">
                         <i class="bi bi-grid"></i><span>Plattform</span>
                     </a>
@@ -189,6 +222,25 @@
                         {% endif %}
                     </div>
                     <div class="p-3 flex items-center gap-2">
+                        {% if session.get('user_id') %}
+                            {% if available_teams|length > 1 %}
+                            <form method="POST" action="{{ url_for('auth.switch_team') }}" class="flex-1">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="next" value="{{ request.full_path }}">
+                                <label class="sr-only" for="teamSelectMobile">Mannschaft wählen</label>
+                                <select id="teamSelectMobile" name="team_code" onchange="this.form.submit()" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    {% for team in available_teams %}
+                                    <option value="{{ team.code }}" {{ 'selected' if team.code == active_team_code else '' }}>{{ team.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                            {% else %}
+                            <span class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800">
+                                <i class="bi bi-people"></i><span>{{ active_team_name }}</span>
+                            </span>
+                            {% endif %}
+                        {% endif %}
+
                         <a href="{{ auth_dashboard_url }}" class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                             <i class="bi bi-grid"></i><span>Zur Plattform</span>
                         </a>

@@ -24,5 +24,6 @@ class Config:
     SSO_AUTO_PROVISION_USERS = os.environ.get('SSO_AUTO_PROVISION_USERS', 'true').lower() == 'true'
     SSO_SYNC_ROLE = os.environ.get('SSO_SYNC_ROLE', 'true').lower() == 'true'
     INTERNAL_API_SECRET = os.environ.get('INTERNAL_API_SECRET') or SSO_SHARED_SECRET
+    TT_INFRA_INTERNAL_URL = os.environ.get('TT_INFRA_INTERNAL_URL', 'http://localhost:8084')
     # Rate limiting: override with redis://host:port/0 for multi-worker production
     RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI', 'memory://')

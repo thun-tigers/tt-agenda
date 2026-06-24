@@ -104,8 +104,53 @@ def sso_login():
     session['profile_complete'] = user.profile_complete
     session['memberships'] = user.memberships_json or []
     session['permissions'] = user.permissions_json or []
+
+    memberships = session.get('memberships') or []
+    available_codes = sorted({
+        (membership.get('team_code') or '').strip().upper()
+        for membership in memberships
+        if (membership.get('team_code') or '').strip()
+    })
+    if not available_codes:
+        available_codes = ['SENIORS']
+
+    token_team = (payload.get('active_team_code') or '').strip().upper()
+    if token_team and token_team in available_codes:
+        session['active_team_code'] = token_team
+    elif session.get('active_team_code') in available_codes:
+        pass
+    else:
+        session['active_team_code'] = available_codes[0]
+
     flash('Erfolgreich via SSO angemeldet.', 'success')
     next_page = request.args.get('next')
     if next_page and is_safe_url(next_page):
         return redirect(next_page)
     return redirect(url_for('main.index'))
+
+
+@bp.route('/team/switch', methods=['POST'])
+def switch_team():
+    if 'user_id' not in session:
+        flash('Bitte melden Sie sich an.', 'warning')
+        return redirect(url_for('auth.login'))
+
+    target = (request.form.get('team_code') or '').strip().upper()
+    next_url = (request.form.get('next') or '').strip()
+    memberships = session.get('memberships') or []
+    allowed = {
+        (membership.get('team_code') or '').strip().upper()
+        for membership in memberships
+        if (membership.get('team_code') or '').strip()
+    }
+    if not allowed:
+        allowed = {'SENIORS'}
+
+    if target and target in allowed:
+        session['active_team_code'] = target
+    else:
+        flash('Ungültige Mannschaftsauswahl.', 'warning')
+
+    if next_url and is_safe_url(next_url):
+        return redirect(next_url)
+    return redirect(request.referrer or url_for('main.index'))

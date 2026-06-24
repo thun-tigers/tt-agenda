@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, send_file, after_this_request
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, send_file, after_this_request, abort
 from datetime import datetime, timedelta, date
 import json
 import os
@@ -6,7 +6,7 @@ import sqlite3
 import tempfile
 from ..models import Training, Activity, TrainingInstance, ActivityInstance, ActivityType
 from ..extensions import db
-from ..utils import admin_required, WEEKDAYS, POSITION_GROUPS, get_activity_behavior, get_activity_color, recalculate_times, recalculate_instance_times
+from ..utils import admin_required, WEEKDAYS, POSITION_GROUPS, get_active_team_code, get_activity_behavior, get_activity_color, recalculate_times, recalculate_instance_times
 from ..forms import validate_training_form, validate_hidden_training_form, sanitize_color
 
 bp = Blueprint('admin', __name__)
@@ -40,6 +40,27 @@ def training_edit_url(training):
     endpoint = 'admin.edit_hidden_training' if training.is_hidden else 'admin.edit_training'
     return url_for(endpoint, id=training.id)
 
+
+def _scoped_training_query(is_hidden=None):
+    query = Training.query.filter_by(team_code=get_active_team_code())
+    if is_hidden is not None:
+        query = query.filter_by(is_hidden=is_hidden)
+    return query
+
+
+def _team_scoped_training_or_404(training_id):
+    training = db.get_or_404(Training, training_id)
+    if training.team_code != get_active_team_code():
+        abort(404)
+    return training
+
+
+def _team_scoped_instance_or_404(instance_id):
+    instance = db.get_or_404(TrainingInstance, instance_id)
+    if instance.training.team_code != get_active_team_code():
+        abort(404)
+    return instance
+
 @bp.route('/admin')
 @admin_required
 def admin_overview():
@@ -56,7 +77,7 @@ def admin_trainings():
     today = date.today()
     
     # Templates - sortiert nach start_date absteigend (neueste zuerst)
-    trainings_query = Training.query.filter_by(is_hidden=False)
+    trainings_query = _scoped_training_query(is_hidden=False)
     if q:
         trainings_query = trainings_query.filter(Training.name.ilike(f"%{q}%"))
     if not include_ended:
@@ -64,7 +85,7 @@ def admin_trainings():
     trainings = trainings_query.order_by(Training.start_date.desc()).all() if type_filter in ['all', 'template'] else []
     
     # Einmalig - sortiert nach start_date absteigend (neueste zuerst)
-    hidden_query = Training.query.filter_by(is_hidden=True)
+    hidden_query = _scoped_training_query(is_hidden=True)
     if q:
         hidden_query = hidden_query.filter(Training.name.ilike(f"%{q}%"))
     if not include_ended:
@@ -72,9 +93,9 @@ def admin_trainings():
     hidden_trainings = hidden_query.order_by(Training.start_date.desc()).all() if type_filter in ['all', 'hidden'] else []
     
     # Angepasst - sortiert nach date absteigend (neueste zuerst)
-    instances_query = TrainingInstance.query
+    instances_query = TrainingInstance.query.join(Training).filter(Training.team_code == get_active_team_code())
     if q:
-        instances_query = instances_query.join(Training).filter(Training.name.ilike(f"%{q}%"))
+        instances_query = instances_query.filter(Training.name.ilike(f"%{q}%"))
     if not include_ended:
         instances_query = instances_query.filter(TrainingInstance.date >= today)
     instances = instances_query.order_by(TrainingInstance.date.desc()).all() if type_filter in ['all', 'instance'] else []
@@ -95,23 +116,23 @@ def trainings_partial():
     include_ended = request.args.get('include_ended') == '1'
     today = date.today()
     
-    trainings_query = Training.query.filter_by(is_hidden=False)
+    trainings_query = _scoped_training_query(is_hidden=False)
     if q:
         trainings_query = trainings_query.filter(Training.name.ilike(f"%{q}%"))
     if not include_ended:
         trainings_query = trainings_query.filter(Training.end_date >= today)
     trainings = trainings_query.order_by(Training.start_date.desc()).all() if type_filter in ['all', 'template'] else []
     
-    hidden_query = Training.query.filter_by(is_hidden=True)
+    hidden_query = _scoped_training_query(is_hidden=True)
     if q:
         hidden_query = hidden_query.filter(Training.name.ilike(f"%{q}%"))
     if not include_ended:
         hidden_query = hidden_query.filter(Training.start_date >= today)
     hidden_trainings = hidden_query.order_by(Training.start_date.desc()).all() if type_filter in ['all', 'hidden'] else []
     
-    instances_query = TrainingInstance.query
+    instances_query = TrainingInstance.query.join(Training).filter(Training.team_code == get_active_team_code())
     if q:
-        instances_query = instances_query.join(Training).filter(Training.name.ilike(f"%{q}%"))
+        instances_query = instances_query.filter(Training.name.ilike(f"%{q}%"))
     if not include_ended:
         instances_query = instances_query.filter(TrainingInstance.date >= today)
     instances = instances_query.order_by(TrainingInstance.date.desc()).all() if type_filter in ['all', 'instance'] else []
@@ -175,6 +196,7 @@ def new_hidden_training():
             return render_template('hidden_training_form.html')
         date_value = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
         training = Training(
+            team_code=get_active_team_code(),
             name=request.form['name'],
             weekday=date_value.weekday(),
             start_date=date_value,
@@ -191,7 +213,7 @@ def new_hidden_training():
 @bp.route('/admin/hidden-trainings/<int:id>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_hidden_training(id):
-    training = db.get_or_404(Training, id)
+    training = _team_scoped_training_or_404(id)
     if request.method == 'POST':
         ok, errors = validate_hidden_training_form(request.form)
         if not ok:
@@ -218,7 +240,7 @@ def edit_hidden_training(id):
 @bp.route('/admin/hidden-trainings/<int:id>/delete', methods=['POST'])
 @admin_required
 def delete_hidden_training(id):
-    training = db.get_or_404(Training, id)
+    training = _team_scoped_training_or_404(id)
     db.session.delete(training)
     db.session.commit()
     flash('Einmaliges Training gelöscht!', 'success')
@@ -312,6 +334,7 @@ def new_training():
                     flash(msg, 'danger')
             return render_template('training_form.html', weekdays=WEEKDAYS)
         training = Training(
+            team_code=get_active_team_code(),
             name=request.form['name'],
             weekday=int(request.form['weekday']),
             start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date(),
@@ -327,7 +350,7 @@ def new_training():
 @bp.route('/training/<int:id>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_training(id):
-    training = db.get_or_404(Training, id)
+    training = _team_scoped_training_or_404(id)
     if training.is_hidden:
         return redirect(url_for('admin.edit_hidden_training', id=id))
     if request.method == 'POST':
@@ -399,7 +422,7 @@ def _next_available_instance_date(training_id, base_date, max_weeks=260):
 @bp.route('/training/<int:id>/instance/create', methods=['POST'])
 @admin_required
 def create_training_instance(id):
-    training = db.get_or_404(Training, id)
+    training = _team_scoped_training_or_404(id)
     instance_date = _parse_instance_date(training)
     if not instance_date:
         return redirect(training_edit_url(training))
@@ -460,7 +483,7 @@ def create_training_instance(id):
 @bp.route('/training/<int:id>/instance/cancel', methods=['POST'])
 @admin_required
 def cancel_training_instance(id):
-    training = db.get_or_404(Training, id)
+    training = _team_scoped_training_or_404(id)
     instance_date = _parse_instance_date(training)
     if not instance_date:
         return redirect(training_edit_url(training))
@@ -484,7 +507,7 @@ def cancel_training_instance(id):
 @bp.route('/training/instance/<int:id>/delete', methods=['POST'])
 @admin_required
 def delete_training_instance(id):
-    instance = db.get_or_404(TrainingInstance, id)
+    instance = _team_scoped_instance_or_404(id)
     training = instance.training
     db.session.delete(instance)
     db.session.commit()
@@ -494,14 +517,14 @@ def delete_training_instance(id):
 @bp.route('/training/instance/<int:id>/edit', methods=['GET'])
 @admin_required
 def edit_training_instance(id):
-    instance = db.get_or_404(TrainingInstance, id)
+    instance = _team_scoped_instance_or_404(id)
     activities = ActivityInstance.query.filter_by(training_instance_id=id).order_by(ActivityInstance.order_index).all()
     return render_template('training_instance_edit.html', training=instance.training, instance=instance, activities=activities, weekdays=WEEKDAYS, position_groups=POSITION_GROUPS)
 
 @bp.route('/training/instance/<int:instance_id>/activity/add', methods=['GET', 'POST'])
 @admin_required
 def add_instance_activity(instance_id):
-    instance = db.get_or_404(TrainingInstance, instance_id)
+    instance = _team_scoped_instance_or_404(instance_id)
     if request.method == 'POST':
         activity_type = request.form.get('activity_type')
         duration = int(request.form.get('duration', 60))
@@ -597,6 +620,8 @@ def edit_instance_activity(id):
     activity = db.get_or_404(ActivityInstance, id)
     instance = activity.training_instance
     training = instance.training
+    if training.team_code != get_active_team_code():
+        abort(404)
 
     individual_mode_same = True
     individual_common_topic = ''
@@ -682,6 +707,8 @@ def edit_instance_activity(id):
 @admin_required
 def delete_instance_activity(id):
     activity = db.get_or_404(ActivityInstance, id)
+    if activity.training_instance.training.team_code != get_active_team_code():
+        abort(404)
     instance_id = activity.training_instance_id
 
     db.session.delete(activity)
@@ -696,6 +723,8 @@ def delete_instance_activity(id):
 @admin_required
 def move_instance_activity_up(id):
     activity = db.get_or_404(ActivityInstance, id)
+    if activity.training_instance.training.team_code != get_active_team_code():
+        abort(404)
     instance_id = activity.training_instance_id
 
     prev_activity = ActivityInstance.query.filter(
@@ -720,6 +749,8 @@ def move_instance_activity_up(id):
 @admin_required
 def move_instance_activity_down(id):
     activity = db.get_or_404(ActivityInstance, id)
+    if activity.training_instance.training.team_code != get_active_team_code():
+        abort(404)
     instance_id = activity.training_instance_id
 
     next_activity = ActivityInstance.query.filter(
@@ -743,7 +774,7 @@ def move_instance_activity_down(id):
 @bp.route('/training/<int:id>/delete', methods=['POST'])
 @admin_required
 def delete_training(id):
-    training = db.get_or_404(Training, id)
+    training = _team_scoped_training_or_404(id)
     db.session.delete(training)
     db.session.commit()
     flash('Training erfolgreich gelöscht!', 'success')
@@ -752,9 +783,10 @@ def delete_training(id):
 @bp.route('/training/<int:id>/copy', methods=['POST'])
 @admin_required
 def copy_training(id):
-    original_training = db.get_or_404(Training, id)
+    original_training = _team_scoped_training_or_404(id)
     
     new_training = Training(
+        team_code=get_active_team_code(),
         name=f"{original_training.name} (Kopie)",
         weekday=original_training.weekday,
         start_date=original_training.start_date,
@@ -787,9 +819,10 @@ def copy_training(id):
 @admin_required
 def copy_hidden_training(id):
     """Kopiert ein einmaliges Training"""
-    original_training = db.get_or_404(Training, id)
+    original_training = _team_scoped_training_or_404(id)
     
     new_training = Training(
+        team_code=get_active_team_code(),
         name=f"{original_training.name} (Kopie)",
         weekday=original_training.weekday,
         start_date=original_training.start_date,
@@ -823,7 +856,7 @@ def copy_hidden_training(id):
 @admin_required
 def copy_training_instance(id):
     """Kopiert eine angepasste Trainingsinstanz"""
-    original_instance = db.get_or_404(TrainingInstance, id)
+    original_instance = _team_scoped_instance_or_404(id)
     next_date = _next_available_instance_date(original_instance.training_id, original_instance.date)
     if not next_date:
         flash('Kein freier Termin zum Kopieren gefunden.', 'danger')
@@ -870,7 +903,7 @@ def add_activity():
         flash('Training-ID fehlt', 'error')
         return redirect(url_for('main.index'))
     
-    training = db.get_or_404(Training, training_id)
+    training = _team_scoped_training_or_404(training_id)
     
     if request.method == 'POST':
         activity_type = request.form.get('activity_type')
@@ -966,6 +999,8 @@ def add_activity():
 def edit_activity(id):
     activity = db.get_or_404(Activity, id)
     training = activity.training
+    if training.team_code != get_active_team_code():
+        abort(404)
     
     individual_mode_same = True
     individual_common_topic = ''
@@ -1051,6 +1086,8 @@ def edit_activity(id):
 @admin_required
 def update_activity(id):
     activity = db.get_or_404(Activity, id)
+    if activity.training.team_code != get_active_team_code():
+        abort(404)
     data = request.json
 
     activity.activity_type = data['activity_type']
@@ -1079,13 +1116,15 @@ def reorder_activities():
     training_id = data['training_id']
     activity_ids = data['activity_ids']
 
+    training = _team_scoped_training_or_404(training_id)
+
     for index, activity_id in enumerate(activity_ids):
         activity = db.session.get(Activity, activity_id)
         if activity:
             activity.order_index = index
 
     db.session.commit()
-    recalculate_times(training_id)
+    recalculate_times(training.id)
 
     return jsonify({'success': True})
 
@@ -1093,6 +1132,8 @@ def reorder_activities():
 @admin_required
 def delete_activity(id):
     activity = db.get_or_404(Activity, id)
+    if activity.training.team_code != get_active_team_code():
+        abort(404)
     training_id = activity.training_id
     training = activity.training  # Referenz vor dem Löschen sichern
 
@@ -1110,6 +1151,8 @@ def delete_activity(id):
 @admin_required
 def move_activity_up(id):
     activity = db.get_or_404(Activity, id)
+    if activity.training.team_code != get_active_team_code():
+        abort(404)
     training_id = activity.training_id
     
     # Finde die Aktivität, die direkt vor der aktuellen liegt (höchster order_index kleiner als aktueller)
@@ -1137,6 +1180,8 @@ def move_activity_up(id):
 @admin_required
 def move_activity_down(id):
     activity = db.get_or_404(Activity, id)
+    if activity.training.team_code != get_active_team_code():
+        abort(404)
     training_id = activity.training_id
     
     # Finde die Aktivität, die direkt nach der aktuellen liegt (kleinster order_index größer als aktueller)

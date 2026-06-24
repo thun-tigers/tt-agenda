@@ -3,14 +3,79 @@ from flask import session, flash, redirect, url_for, request
 from functools import wraps
 import json
 import logging
+import os
 from typing import List, Tuple, Optional, Dict, Any
+import requests
 from .models import Activity, ActivityInstance, Training, TrainingInstance, ActivityType
 from .extensions import db
 
 logger = logging.getLogger(__name__)
 
 WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
-POSITION_GROUPS = ['OL', 'DL', 'LB', 'RB', 'DB', 'TE', 'WR', 'QB']
+POSITION_GROUP_DEFAULTS = [
+    {'key': 'OL', 'label': 'OL', 'sort_order': 1},
+    {'key': 'DL', 'label': 'DL', 'sort_order': 2},
+    {'key': 'LB', 'label': 'LB', 'sort_order': 3},
+    {'key': 'RB', 'label': 'RB', 'sort_order': 4},
+    {'key': 'DB', 'label': 'DB', 'sort_order': 5},
+    {'key': 'TE', 'label': 'TE', 'sort_order': 6},
+    {'key': 'WR', 'label': 'WR', 'sort_order': 7},
+    {'key': 'QB', 'label': 'QB', 'sort_order': 8},
+]
+POSITION_GROUPS = [item['key'] for item in POSITION_GROUP_DEFAULTS]
+POSITION_GROUP_LABELS = {item['key']: item['label'] for item in POSITION_GROUP_DEFAULTS}
+
+
+def _infra_base_url():
+    return (
+        os.environ.get('TT_INFRA_INTERNAL_URL')
+        or os.environ.get('INFRA_INTERNAL_URL')
+        or 'http://localhost:8084'
+    ).rstrip('/')
+
+
+def refresh_position_groups():
+    try:
+        secret = os.environ.get('INTERNAL_API_SECRET') or os.environ.get('SSO_SHARED_SECRET')
+        headers = {'X-TT-Internal-Secret': secret} if secret else {}
+        response = requests.get(f'{_infra_base_url()}/api/master-data/positions', headers=headers, timeout=4)
+        if response.status_code >= 400:
+            logger.warning("refresh_position_groups: infra query failed %s %s", response.status_code, response.text)
+            return POSITION_GROUPS
+        payload = response.json() or {}
+        rows = payload.get('positions') or []
+        cleaned = []
+        labels = {}
+        for row in rows:
+            key = (row.get('key') or '').strip().upper()
+            label = (row.get('label') or key).strip()
+            if not key:
+                continue
+            cleaned.append(key)
+            labels[key] = label or key
+        if cleaned:
+            POSITION_GROUPS[:] = cleaned
+            POSITION_GROUP_LABELS.clear()
+            POSITION_GROUP_LABELS.update(labels)
+        return POSITION_GROUPS
+    except Exception:
+        logger.warning("refresh_position_groups: infra query failed, using defaults", exc_info=True)
+        return POSITION_GROUPS
+
+
+def get_position_group_defs():
+    return [
+        {'key': key, 'label': POSITION_GROUP_LABELS.get(key, key), 'sort_order': idx + 1}
+        for idx, key in enumerate(POSITION_GROUPS)
+    ]
+
+
+def get_position_groups():
+    return POSITION_GROUPS
+
+
+def get_position_group_labels():
+    return POSITION_GROUP_LABELS
 
 ACTIVITY_TYPE_DEFAULTS = [
     {
@@ -139,6 +204,44 @@ def get_user_memberships():
     return memberships if isinstance(memberships, list) else []
 
 
+def get_available_teams():
+    memberships = get_user_memberships()
+    teams = {}
+    for membership in memberships:
+        code = (membership.get('team_code') or '').strip().upper()
+        name = (membership.get('team_name') or '').strip()
+        if not code:
+            continue
+        teams[code] = name or code
+
+    if not teams:
+        teams = {'SENIORS': 'Seniors'}
+
+    return [{'code': code, 'name': teams[code]} for code in sorted(teams.keys())]
+
+
+def get_active_team_code():
+    teams = get_available_teams()
+    available_codes = {team['code'] for team in teams}
+    active = (session.get('active_team_code') or '').strip().upper()
+
+    if active in available_codes:
+        return active
+
+    fallback = teams[0]['code']
+    session['active_team_code'] = fallback
+    return fallback
+
+
+def get_active_team_name():
+    active = get_active_team_code()
+    teams = get_available_teams()
+    for team in teams:
+        if team['code'] == active:
+            return team['name']
+    return active
+
+
 def can_manage_agenda():
     if session.get('user_role') == 'admin' or session.get('platform_role') == 'admin':
         return True
@@ -247,13 +350,16 @@ def resolve_activities_for_date(training: Training, date: datetime.date, activit
         return instance_activities_by_id.get(instance.id, []), False
     return activities_by_training.get(training.id, []), False
 
-def load_training_data():
+def load_training_data(team_code=None):
     """Lädt alle Trainings, Aktivitäten und Instanzen effizient aus der DB.
 
     Gibt ein 4-Tuple zurück:
       (trainings, activities_by_training, instances_by_key, instance_activities_by_id)
     """
-    trainings = Training.query.all()
+    trainings_query = Training.query
+    if team_code:
+        trainings_query = trainings_query.filter_by(team_code=team_code)
+    trainings = trainings_query.all()
     training_ids = [t.id for t in trainings]
 
     activities_by_training: Dict[int, List[Activity]] = {t.id: [] for t in trainings}
@@ -397,7 +503,7 @@ def get_text_color_for_bg(bg_color):
         return 'black'
 
 def build_group_cells(activity: Activity) -> List[Dict[str, Any]]:
-    all_groups = POSITION_GROUPS
+    all_groups = get_position_groups()
     group_tone_map = {
         'OL': 0,
         'DL': 1,

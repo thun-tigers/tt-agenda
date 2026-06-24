@@ -5,9 +5,17 @@ from .utils import (
     ACTIVITY_TYPE_DEFAULTS,
     can_manage_agenda,
     can_view_agenda,
+    get_active_team_code,
+    get_active_team_name,
     get_activity_color,
     get_activity_type_defs,
     get_activity_type_order,
+    get_available_teams,
+    POSITION_GROUP_DEFAULTS,
+    get_position_group_defs,
+    get_position_groups,
+    get_position_group_labels,
+    refresh_position_groups,
     get_team_like_types,
 )
 from .activity_colors import get_activity_color_map
@@ -69,6 +77,7 @@ def create_app(config_class=Config):
     @app.context_processor
     def inject_colors():
         activity_defs = get_activity_type_defs()
+        position_defs = get_position_group_defs()
         return {
             'LIGHT_MODE_COLORS': get_activity_color_map('light'),
             'DARK_MODE_COLORS': get_activity_color_map('dark'),
@@ -78,9 +87,16 @@ def create_app(config_class=Config):
             'ACTIVITY_TYPE_ORDER': get_activity_type_order(),
             'TEAM_LIKE_TYPES': get_team_like_types(),
             'ACTIVITY_TYPE_BEHAVIORS': {key: value.get('behavior') for key, value in activity_defs.items()},
+            'POSITION_GROUP_DEFS': position_defs,
+            'POSITION_GROUPS': [item['key'] for item in position_defs],
+            'POSITION_GROUP_LABELS': {item['key']: item['label'] for item in position_defs},
             'can_manage_agenda': can_manage_agenda,
             'can_view_agenda': can_view_agenda,
         }
+
+    @app.before_request
+    def refresh_shared_master_data():
+        refresh_position_groups()
 
     def generate_csrf_token():
         token = session.get('_csrf_token')
@@ -96,9 +112,14 @@ def create_app(config_class=Config):
     @app.context_processor
     def inject_platform_links():
         auth_base_url = app.config.get('AUTH_BASE_URL', 'http://localhost:8085').rstrip('/')
+        teams = get_available_teams()
+        active_team_code = get_active_team_code()
         return {
             'auth_base_url': auth_base_url,
             'auth_dashboard_url': f'{auth_base_url}/',
+            'available_teams': teams,
+            'active_team_code': active_team_code,
+            'active_team_name': get_active_team_name(),
         }
 
     @app.before_request
@@ -203,6 +224,31 @@ def create_app(config_class=Config):
             db.session.commit()
             app.logger.info('Applied agenda user auth-claim schema updates.')
 
+    def ensure_training_team_column():
+        inspector = inspect(db.engine)
+        if 'training' not in inspector.get_table_names():
+            return
+
+        existing_columns = {column['name'] for column in inspector.get_columns('training')}
+        dialect = db.engine.dialect.name
+
+        statements = []
+        if 'team_code' not in existing_columns:
+            statements.append("ALTER TABLE training ADD COLUMN team_code VARCHAR(32)")
+
+        for statement in statements:
+            db.session.execute(text(statement))
+
+        if statements:
+            db.session.commit()
+
+        # Backfill existing/null values and enforce NOT NULL semantics
+        db.session.execute(text("UPDATE training SET team_code = 'SENIORS' WHERE team_code IS NULL OR team_code = ''"))
+        if dialect == 'postgresql':
+            db.session.execute(text("ALTER TABLE training ALTER COLUMN team_code SET DEFAULT 'SENIORS'"))
+            db.session.execute(text("ALTER TABLE training ALTER COLUMN team_code SET NOT NULL"))
+        db.session.commit()
+
     with app.app_context():
         if app.config.get('AUTO_CREATE_DB'):
             try:
@@ -212,6 +258,7 @@ def create_app(config_class=Config):
                     raise
                 app.logger.warning('DB init race condition detected; continuing.')
             ensure_user_auth_claim_columns()
+            ensure_training_team_column()
             # Backward-compat shim for existing deployments that do not run
             # `flask db upgrade`. New installations use Alembic migrations.
             if db.engine.dialect.name == 'sqlite':
@@ -232,4 +279,5 @@ def create_app(config_class=Config):
                     db.session.execute(text("ALTER TABLE training ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
                 db.session.commit()
             ensure_activity_types()
+            refresh_position_groups()
     return app

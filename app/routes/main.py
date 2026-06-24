@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, session, current_app
 from datetime import datetime
 from ..models import Training, Activity, TrainingInstance, ActivityInstance
 from ..extensions import db
-from ..utils import login_required, get_current_training_status, get_upcoming_trainings, get_timeline_from_activities, load_training_data, WEEKDAYS, POSITION_GROUPS
+from ..utils import login_required, get_active_team_code, get_current_training_status, get_upcoming_trainings, get_timeline_from_activities, load_training_data, WEEKDAYS, POSITION_GROUPS
 import logging
 import requests
 
@@ -41,7 +41,8 @@ def index():
             session['webhook_sent'] = True
             session.permanent = True  # Sicherstellen, dass die Session permanent ist
 
-        trainings = Training.query.all()
+        team_code = get_active_team_code()
+        trainings = Training.query.filter_by(team_code=team_code).all()
         training_ids = [training.id for training in trainings]
         activities_by_training = {training.id: [] for training in trainings}
         if training_ids:
@@ -86,7 +87,8 @@ def index():
 @login_required
 def live():
     try:
-        trainings, activities_by_training, instances_by_key, instance_activities_by_id = load_training_data()
+        team_code = get_active_team_code()
+        trainings, activities_by_training, instances_by_key, instance_activities_by_id = load_training_data(team_code=team_code)
 
         now = datetime.now()
         today = now.date()
@@ -107,6 +109,8 @@ def live():
         display_activities = None
         if selected_training_id and selected_date:
             training = db.get_or_404(Training, selected_training_id)
+            if training.team_code != team_code:
+                return render_template('error.html'), 404
             if training.start_date <= selected_date <= training.end_date and training.weekday == selected_date.weekday():
                 instance = instances_by_key.get((training.id, selected_date))
                 if instance and instance.status == 'cancelled':

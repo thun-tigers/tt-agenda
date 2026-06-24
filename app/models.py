@@ -29,6 +29,7 @@ class JsonType(TypeDecorator):
 
 class Training(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    team_code = db.Column(db.String(32), nullable=False, default='SENIORS', index=True)
     name = db.Column(db.String(100), nullable=False)
     weekday = db.Column(db.Integer, nullable=False)
     start_date = db.Column(db.Date, nullable=False)
@@ -80,6 +81,7 @@ class ActivityType(db.Model):
     light_color = db.Column(db.String(7), nullable=False, default='#E8E8E8')
     dark_color = db.Column(db.String(7), nullable=False, default='#4A4A4A')
     sort_order = db.Column(db.Integer, default=0, nullable=False)
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
