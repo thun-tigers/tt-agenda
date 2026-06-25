@@ -2,6 +2,23 @@
 
 Eine moderne, benutzerfreundliche Web-Anwendung zur Verwaltung von Trainings, Aktivitäten und Live-Übersichten für Sportvereine.
 
+## Aktueller Plattform-Stand
+
+Der Service laeuft heute als Microservice im Tigers-Stack mit zentralem Login ueber tt-auth.
+
+- Lokal: http://localhost:8086
+- Beta: https://agenda-beta.thun-tigers.net
+- Auth-Service: https://auth-beta.thun-tigers.net
+
+Hinweis: Fuer den produktionsnahen Betrieb und die aktuelle Stack-Orchestrierung sind die Dokumente in tt-infra massgebend.
+
+## Versionierung
+
+- verbindliche Service-Version steht in `VERSION`
+- Release-Tags folgen `vMAJOR.MINOR.PATCH`
+- `main` publisht Beta-Images nach GHCR mit Tag `beta`
+- Produktion deployt feste Release-Tags wie `v0.1.0`
+
 ## Features
 
 ### 🎯 Kernfunktionalität
@@ -267,6 +284,6 @@ Bei Fragen oder Problemen bitte ein Issue erstellen oder den Administrator konta
 
 ---
 
-**Version**: 0.2.0  
+**Version**: 0.1.0  
 **Letzte Aktualisierung**: Januar 2026  
 **Entwickler**: Trainingsverwaltungs-Team
