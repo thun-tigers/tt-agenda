@@ -11,20 +11,17 @@
     </div>
 
     <!-- Main Form Card -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-4 sm:p-6 mb-4 sm:mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-4 sm:p-5 mb-4 sm:mb-5">
         <form method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <!-- Name (2 columns) -->
-                <div class="sm:col-span-2">
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
+                <div>
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Name</label>
                     <input type="text" name="name" value="{{ training.name }}" required
                            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                 </div>
-                
-                <!-- Wochentag (2 columns) -->
-                <div class="sm:col-span-2">
+                <div>
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Wochentag</label>
                     <select name="weekday" required
                             class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
@@ -33,37 +30,30 @@
                         {% endfor %}
                     </select>
                 </div>
-                
-                <!-- Startzeit (2 columns) -->
-                <div class="sm:col-span-2">
+                <div>
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Startzeit</label>
                     <input type="time" name="start_time" value="{{ training.start_time.strftime('%H:%M') }}" required
                            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                 </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <!-- Startdatum -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Startdatum</label>
                     <input type="date" name="start_date" value="{{ training.start_date }}" required
                            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                 </div>
-                
-                <!-- Enddatum -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Enddatum</label>
                     <input type="date" name="end_date" value="{{ training.end_date }}" required
                            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                 </div>
+                <div class="hidden lg:block"></div>
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex flex-col sm:flex-row gap-3">
-                <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold rounded-lg transition transform hover:scale-105">
+            <div class="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                <button type="submit" class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold rounded-lg transition">
                     <i class="bi bi-save mr-2"></i>Speichern
                 </button>
-                <a href="{{ url_for('main.index') }}" class="px-6 py-2.5 text-center border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+                <a href="{{ url_for('main.index') }}" class="px-5 py-2 text-center border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition">
                     <i class="bi bi-arrow-left mr-2"></i>Zurück
                 </a>
             </div>
@@ -71,230 +61,195 @@
     </div>
 
     <!-- Angepasste Termine Card -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-4 sm:p-6 mb-4 sm:mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-3 sm:p-4 mb-4 sm:mb-5">
         <h2 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
             <i class="bi bi-gear text-indigo-600 dark:text-indigo-400"></i>
             Angepasste Termine
         </h2>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Datum</label>
-                <input type="date" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" 
-                       form="create-instance-form" name="date" required>
-            </div>
-            
-            <form id="create-instance-form" method="POST" action="{{ url_for('admin.create_training_instance', id=training.id) }}" class="inline">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="flex items-end gap-2 h-full">
-                    <button type="submit" class="w-full px-6 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold rounded-lg transition transform hover:scale-105">
-                        <i class="bi bi-plus-circle mr-2"></i>Anpassen
-                    </button>
-                </div>
-            </form>
-            
-            <form method="POST" action="{{ url_for('admin.cancel_training_instance', id=training.id) }}" class="inline">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="date" value="" id="cancel-date-input">
-                <div class="flex items-end gap-2 h-full">
-                    <button type="submit" class="w-full px-6 py-2 border-2 border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 font-semibold rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition" onclick="setCancelDate()">
-                        <i class="bi bi-x-circle mr-2"></i>Termin absagen
-                    </button>
-                </div>
-            </form>
+        <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700 mb-3 sm:mb-4">
+            <table class="w-full text-sm">
+                <tbody>
+                    <tr>
+                        <th class="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-300 w-36">Datum</th>
+                        <td class="px-3 py-2">
+                            <input type="date" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                   form="create-instance-form" name="date" required>
+                        </td>
+                    </tr>
+                    <tr class="border-t border-slate-200 dark:border-slate-700">
+                        <th class="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-300">Aktionen</th>
+                        <td class="px-3 py-2">
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <form id="create-instance-form" method="POST" action="{{ url_for('admin.create_training_instance', id=training.id) }}" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold rounded-lg transition">
+                                        <i class="bi bi-plus-circle mr-2"></i>Anpassen
+                                    </button>
+                                </form>
+
+                                <form method="POST" action="{{ url_for('admin.cancel_training_instance', id=training.id) }}" class="inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="date" value="" id="cancel-date-input">
+                                    <button type="submit" class="w-full sm:w-auto px-4 py-2 border-2 border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 font-semibold rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition" onclick="setCancelDate()">
+                                        <i class="bi bi-x-circle mr-2"></i>Termin absagen
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         {% if instances %}
-        <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Vorhandene angepasste Termine</h3>
-            <div class="space-y-2">
-                {% for instance in instances %}
-                <div class="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 hover:shadow-md transition">
-                    <div class="flex items-center gap-3">
-                        <i class="bi bi-calendar-event text-indigo-600 dark:text-indigo-400"></i>
-                        <div>
-                            <div class="font-semibold text-slate-900 dark:text-white">{{ instance.date.strftime('%d.%m.%Y') }}</div>
-                            {% if instance.status == 'cancelled' %}
-                            <span class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">Abgesagt</span>
-                            {% else %}
-                            <span class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">Angepasst</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        {% if instance.status != 'cancelled' %}
-                        <a href="{{ url_for('admin.edit_training_instance', id=instance.id) }}" class="px-3 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition border border-indigo-200 dark:border-indigo-700">
-                            <i class="bi bi-pencil-fill"></i>
-                        </a>
-                        {% endif %}
-                        <form method="POST" action="{{ url_for('admin.delete_training_instance', id=instance.id) }}" class="inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition border border-slate-200 dark:border-slate-600">
-                                <i class="bi bi-trash-fill"></i>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                {% endfor %}
+        <div class="pt-2">
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Vorhandene angepasste Termine</h3>
+            <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 dark:bg-slate-900/60">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">Datum</th>
+                            <th class="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">Status</th>
+                            <th class="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-300">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                        {% for instance in instances %}
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
+                            <td class="px-4 py-3 font-semibold text-slate-900 dark:text-white">{{ instance.date.strftime('%d.%m.%Y') }}</td>
+                            <td class="px-4 py-3">
+                                {% if instance.status == 'cancelled' %}
+                                <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">Abgesagt</span>
+                                {% else %}
+                                <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">Angepasst</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center justify-end gap-2">
+                                    {% if instance.status != 'cancelled' %}
+                                    <a href="{{ url_for('admin.edit_training_instance', id=instance.id) }}" class="px-3 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition border border-indigo-200 dark:border-indigo-700">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </a>
+                                    {% endif %}
+                                    <form method="POST" action="{{ url_for('admin.delete_training_instance', id=instance.id) }}" class="inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition border border-slate-200 dark:border-slate-600">
+                                            <i class="bi bi-trash-fill"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
         {% endif %}
     </div>
 
-    <!-- Aktivitäten Card -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-6">
-        <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-            <i class="bi bi-list-check text-indigo-600 dark:text-indigo-400"></i>
-            Aktivitäten
-        </h2>
+    <!-- Aktivitäten Tabelle -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-4 sm:p-5">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="bi bi-list-check text-indigo-600 dark:text-indigo-400"></i>
+                Aktivitäten
+            </h2>
+            <div class="flex items-center gap-2">
+                <span id="activities-reorder-status" class="text-xs text-slate-500 dark:text-slate-400">Drag-and-drop aktiv</span>
+                <button id="activities-reorder-save" type="button" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="bi bi-check-lg"></i>
+                    Speichern
+                </button>
+            </div>
+        </div>
 
-        <div id="activities-list" class="space-y-2">
-            {% for activity in activities %}
-            <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200 dark:border-slate-600 p-4 hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600 transition-all activity-type-{{ activity.activity_type }}">
-                {% set activity_def = ACTIVITY_TYPE_DEFS.get(activity.activity_type, {}) %}
-                {% set activity_label = activity_def.label if activity_def else activity.activity_type %}
-                {% set activity_behavior = activity_def.behavior if activity_def else '' %}
-                
-                <div class="flex gap-3 items-start">
-                    <!-- Up/Down Controls -->
-                    <div class="flex flex-col gap-1 justify-start pt-0.5">
-                        {% if not loop.first %}
-                        <form method="POST" action="{{ url_for('admin.move_activity_up', id=activity.id) }}" class="inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="p-1.5 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded transition" title="Nach oben">
-                                <i class="bi bi-chevron-up text-sm"></i>
-                            </button>
-                        </form>
-                        {% else %}
-                        <div class="p-1.5"></div>
-                        {% endif %}
-                        {% if not loop.last %}
-                        <form method="POST" action="{{ url_for('admin.move_activity_down', id=activity.id) }}" class="inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="p-1.5 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded transition" title="Nach unten">
-                                <i class="bi bi-chevron-down text-sm"></i>
-                            </button>
-                        </form>
-                        {% else %}
-                        <div class="p-1.5"></div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Content -->
-                    <div class="flex-grow min-w-0">
-                        <!-- Title/Topic -->
-                        <div class="flex items-start justify-between gap-2 mb-2">
-                            <div class="flex-grow">
-                                {% if activity_behavior == 'team' and activity.topic %}
-                                <h4 class="font-bold text-slate-900 dark:text-white text-base mb-0">{{ activity.topic }}</h4>
-                                {% elif activity_behavior == 'individual' and activity.topics_json %}
-                                {% set topics = activity.topics_json|parse_groups %}
-                                {% set topic_values = topics.values()|list %}
-                                {% if topic_values and topic_values|length > 0 %}
-                                    {% set first_topic = topic_values[0] %}
-                                    {% set all_same = topic_values|select('equalto', first_topic)|list|length == topic_values|length %}
-                                    {% if all_same %}
-                                    <h4 class="font-bold text-slate-900 dark:text-white text-base mb-0">{{ first_topic }}</h4>
-                                    {% else %}
-                                    <h4 class="font-bold text-slate-900 dark:text-white text-base mb-0">{{ activity_label }}</h4>
-                                    <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">verschiedene Themen</p>
-                                    {% endif %}
-                                {% else %}
-                                <h4 class="font-bold text-slate-900 dark:text-white text-base mb-0">{{ activity_label }}</h4>
-                                {% endif %}
-                                {% elif activity_behavior == 'group' and activity.topics_json %}
-                                {% set combinations = activity.topics_json|parse_groups %}
-                                {% if combinations and combinations|length > 0 %}
-                                <h4 class="font-bold text-slate-900 dark:text-white text-base mb-0">{{ combinations[0].topic }}</h4>
-                                {% if combinations|length > 1 %}
-                                <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">+ {{ combinations|length - 1 }} weitere Gruppe(n)</p>
-                                {% endif %}
-                                {% else %}
-                                <h4 class="font-bold text-slate-900 dark:text-white text-base mb-0">{{ activity_label }}</h4>
-                                {% endif %}
-                                {% else %}
-                                <h4 class="font-bold text-slate-900 dark:text-white text-base mb-0">{{ activity_label }}</h4>
-                                {% endif %}
-                            </div>
-
-                            <!-- Type Badge -->
-                            <span class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 bg-indigo-100 dark:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-700 whitespace-nowrap flex-shrink-0">
-                                {{ activity_label }}
-                            </span>
-                        </div>
-
-                        <!-- Time Info -->
-                        <div class="flex items-center gap-3 text-xs">
-                            <div class="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                                <i class="bi bi-clock-history text-indigo-600 dark:text-indigo-400"></i>
-                                <strong>{{ activity.start_time.strftime('%H:%M') }}</strong>
-                            </div>
-                            <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium">
-                                <i class="bi bi-hourglass-split text-amber-600 dark:text-amber-400 text-xs"></i>
-                                {{ activity.duration }} Min
-                            </div>
-                        </div>
-
-                        <!-- Details für Individual und Group -->
-                        {% if activity_behavior == 'individual' and activity.topics_json %}
+        <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+            <table id="activities-table" class="js-smart-table min-w-full divide-y divide-slate-200 dark:divide-slate-700" data-table-sort="off" data-activity-reorder-url="{{ url_for('admin.reorder_activities') }}" data-owner-key="training_id" data-owner-id="{{ training.id }}" data-csrf-token="{{ csrf_token() }}" data-status-target="activities-reorder-status">
+                <thead class="bg-slate-50 dark:bg-slate-900/60">
+                    <tr>
+                        <th class="w-10 px-4 py-3"></th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Startzeit</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Dauer</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Aktivität</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Typ</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                    {% for activity in activities %}
+                    {% set activity_def = ACTIVITY_TYPE_DEFS.get(activity.activity_type, {}) %}
+                    {% set activity_label = activity_def.label if activity_def else activity.activity_type %}
+                    {% set activity_behavior = activity_def.behavior if activity_def else '' %}
+                    {% set activity_title = activity_label %}
+                    {% set activity_subtitle = '' %}
+                    {% if activity_behavior == 'team' and activity.topic %}
+                        {% set activity_title = activity.topic %}
+                    {% elif activity_behavior == 'individual' and activity.topics_json %}
                         {% set topics = activity.topics_json|parse_groups %}
                         {% set topic_values = topics.values()|list %}
                         {% if topic_values and topic_values|length > 0 %}
                             {% set first_topic = topic_values[0] %}
                             {% set all_same = topic_values|select('equalto', first_topic)|list|length == topic_values|length %}
-                            {% if not all_same %}
-                            <details class="group mt-1.5">
-                                <summary class="text-xs text-indigo-600 dark:text-indigo-400 cursor-pointer hover:underline font-medium">
-                                    <i class="bi bi-chevron-right group-open:rotate-90 inline-block transition-transform text-xs"></i> Einzelne Themen
-                                </summary>
-                                <ul class="mt-2 ml-3 space-y-1 text-xs text-slate-700 dark:text-slate-300">
-                                    {% for group, topic in topics.items() %}
-                                    <li><i class="bi bi-square-fill text-indigo-500 mr-1.5 text-xs"></i><strong class="text-slate-900 dark:text-white">{{ group }}:</strong> {{ topic }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </details>
+                            {% if all_same %}
+                                {% set activity_title = first_topic %}
+                            {% else %}
+                                {% set activity_subtitle = 'verschiedene Themen' %}
                             {% endif %}
                         {% endif %}
-                        {% elif activity_behavior == 'group' and activity.topics_json %}
+                    {% elif activity_behavior == 'group' and activity.topics_json %}
                         {% set combinations = activity.topics_json|parse_groups %}
-                        {% if combinations and combinations|length > 1 %}
-                        <details class="group mt-1.5">
-                            <summary class="text-xs text-indigo-600 dark:text-indigo-400 cursor-pointer hover:underline font-medium">
-                                <i class="bi bi-chevron-right group-open:rotate-90 inline-block transition-transform text-xs"></i> Alle Gruppen ({{ combinations|length }})
-                            </summary>
-                            <ul class="mt-2 ml-3 space-y-1 text-xs text-slate-700 dark:text-slate-300">
-                                {% for combo in combinations %}
-                                <li><i class="bi bi-square-fill text-indigo-500 mr-1.5 text-xs"></i>{{ combo.groups|join(' & ') }}: <strong class="text-slate-900 dark:text-white">{{ combo.topic }}</strong></li>
-                                {% endfor %}
-                            </ul>
-                        </details>
+                        {% if combinations and combinations|length > 0 %}
+                            {% set activity_title = combinations[0].topic %}
+                            {% if combinations|length > 1 %}
+                                {% set activity_subtitle = '+ ' ~ (combinations|length - 1) ~ ' weitere Gruppe(n)' %}
+                            {% endif %}
                         {% endif %}
-                        {% endif %}
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="flex gap-1.5 items-center flex-shrink-0">
-                        <a href="{{ url_for('admin.edit_activity', id=activity.id) }}" class="p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg transition border border-indigo-300 dark:border-indigo-600 hover:border-indigo-500 dark:hover:border-indigo-500" title="Bearbeiten">
-                            <i class="bi bi-pencil-fill text-sm"></i>
-                        </a>
-                        <form method="POST" action="{{ url_for('admin.delete_activity', id=activity.id) }}" class="inline" onsubmit="return confirm('Aktivität wirklich löschen?');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition border border-red-300 dark:border-red-600 hover:border-red-500 dark:hover:border-red-500" title="Löschen">
-                                <i class="bi bi-trash-fill text-sm"></i>
+                    {% endif %}
+                    <tr data-activity-id="{{ activity.id }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors" draggable="true">
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <button type="button" class="js-activity-drag-handle p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg border border-slate-300 dark:border-slate-600" title="Reihenfolge ziehen" aria-label="Reihenfolge ziehen">
+                                <i class="bi bi-grip-vertical text-sm"></i>
                             </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-            
-            {% if not activities %}
-            <div class="text-center py-12 text-slate-600 dark:text-slate-400">
-                <i class="bi bi-inbox text-5xl mb-4 block opacity-40"></i>
-                <p class="font-medium">Noch keine Aktivitäten vorhanden</p>
-                <p class="text-sm">Klicke unten auf "Aktivität hinzufügen" um zu starten.</p>
-            </div>
-            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-slate-900 dark:text-white">{{ activity.start_time.strftime('%H:%M') }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">{{ activity.duration }} Min</td>
+                        <td class="px-4 py-3 text-sm text-slate-900 dark:text-white">
+                            <div class="font-semibold">{{ activity_title }}</div>
+                            {% if activity_subtitle %}
+                            <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ activity_subtitle }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-200 bg-indigo-100 dark:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-700">{{ activity_label }}</span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <a href="{{ url_for('admin.edit_activity', id=activity.id) }}" class="p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg transition border border-indigo-300 dark:border-indigo-600 hover:border-indigo-500 dark:hover:border-indigo-500" title="Bearbeiten">
+                                    <i class="bi bi-pencil-fill text-sm"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('admin.delete_activity', id=activity.id) }}" class="inline" onsubmit="return confirm('Aktivität wirklich löschen?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition border border-red-300 dark:border-red-600 hover:border-red-500 dark:hover:border-red-500" title="Löschen">
+                                        <i class="bi bi-trash-fill text-sm"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not activities %}
+                    <tr>
+                        <td colspan="6" class="px-4 py-10 text-center text-slate-600 dark:text-slate-400">
+                            <i class="bi bi-inbox text-4xl mb-3 block opacity-40"></i>
+                            <p class="font-medium">Noch keine Aktivitäten vorhanden</p>
+                            <p class="text-sm">Klicke unten auf "Aktivität hinzufügen" um zu starten.</p>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
 
         <a href="{{ url_for('admin.add_activity', training_id=training.id) }}" class="inline-block mt-8 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg transition transform hover:scale-105 shadow-md hover:shadow-lg">
@@ -313,5 +268,145 @@ function setCancelDate() {
         cancelInput.value = dateInput.value;
     }
 }
+
+(function initActivityReorderTable() {
+    const table = document.getElementById('activities-table');
+    const saveButton = document.getElementById('activities-reorder-save');
+    const statusEl = document.getElementById('activities-reorder-status');
+    if (!table || !saveButton) {
+        return;
+    }
+
+    const tbody = table.querySelector('tbody');
+    if (!tbody) {
+        return;
+    }
+
+    const rowSelector = 'tr[data-activity-id]';
+    let draggedRow = null;
+    let orderChanged = false;
+
+    function setStatus(text, mode) {
+        if (!statusEl) {
+            return;
+        }
+        statusEl.textContent = text;
+        statusEl.classList.remove('text-slate-500', 'text-emerald-600', 'text-red-600', 'dark:text-slate-400', 'dark:text-emerald-400', 'dark:text-red-400');
+        if (mode === 'success') {
+            statusEl.classList.add('text-emerald-600', 'dark:text-emerald-400');
+        } else if (mode === 'error') {
+            statusEl.classList.add('text-red-600', 'dark:text-red-400');
+        } else {
+            statusEl.classList.add('text-slate-500', 'dark:text-slate-400');
+        }
+    }
+
+    function setOrderChanged(changed) {
+        orderChanged = changed;
+        saveButton.disabled = !changed;
+        if (changed) {
+            setStatus('Reihenfolge geändert - Speichern klicken', 'neutral');
+        } else {
+            setStatus('Drag-and-drop aktiv', 'neutral');
+        }
+    }
+
+    function getRows() {
+        return Array.from(tbody.querySelectorAll(rowSelector));
+    }
+
+    function getActivityIds() {
+        return getRows().map((row) => Number(row.dataset.activityId));
+    }
+
+    tbody.addEventListener('dragstart', (event) => {
+        const row = event.target.closest(rowSelector);
+        if (!row) {
+            event.preventDefault();
+            return;
+        }
+        draggedRow = row;
+        row.classList.add('opacity-50');
+        event.dataTransfer.effectAllowed = 'move';
+    });
+
+    tbody.addEventListener('dragend', () => {
+        if (draggedRow) {
+            draggedRow.classList.remove('opacity-50');
+        }
+        draggedRow = null;
+    });
+
+    tbody.addEventListener('dragover', (event) => {
+        if (!draggedRow) {
+            return;
+        }
+        event.preventDefault();
+        const row = event.target.closest(rowSelector);
+        if (!row || row === draggedRow) {
+            return;
+        }
+
+        const rect = row.getBoundingClientRect();
+        const insertAfter = event.clientY > rect.top + rect.height / 2;
+        if (insertAfter) {
+            tbody.insertBefore(draggedRow, row.nextSibling);
+        } else {
+            tbody.insertBefore(draggedRow, row);
+        }
+    });
+
+    tbody.addEventListener('drop', (event) => {
+        if (!draggedRow) {
+            return;
+        }
+        event.preventDefault();
+        setOrderChanged(true);
+    });
+
+    saveButton.addEventListener('click', async () => {
+        const reorderUrl = table.dataset.activityReorderUrl;
+        const ownerKey = table.dataset.ownerKey;
+        const ownerId = Number(table.dataset.ownerId);
+        const csrfToken = table.dataset.csrfToken;
+
+        if (!reorderUrl || !ownerKey || !ownerId || !csrfToken) {
+            setStatus('Reorder-Konfiguration fehlt', 'error');
+            return;
+        }
+
+        saveButton.disabled = true;
+        setStatus('Speichere Reihenfolge ...', 'neutral');
+
+        try {
+            const payload = {
+                activity_ids: getActivityIds(),
+                csrf_token: csrfToken
+            };
+            payload[ownerKey] = ownerId;
+
+            const response = await fetch(reorderUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+
+            setOrderChanged(false);
+            setStatus('Reihenfolge gespeichert', 'success');
+        } catch (error) {
+            setStatus('Speichern fehlgeschlagen', 'error');
+            saveButton.disabled = false;
+        }
+    });
+
+    setOrderChanged(false);
+})();
 </script>
 {% endblock %}

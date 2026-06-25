@@ -3,6 +3,7 @@ from urllib.parse import urlencode, urljoin, urlparse
 
 import jwt
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
+from ..authz import normalize_auth_payload
 from ..models import User
 from ..extensions import limiter, db
 from werkzeug.security import generate_password_hash
@@ -71,16 +72,16 @@ def sso_login():
         flash('Ungültiger SSO-Token.', 'danger')
         return redirect(url_for('auth.login'))
 
-    username = (payload.get('username') or '').strip()
-    role = (payload.get('service_role') or payload.get('role') or 'user').strip().lower()
-    if role not in ('admin', 'user'):
-        role = 'user'
+    auth = normalize_auth_payload(payload)
+    claims = auth['claims']
+    username = (claims.get('username') or '').strip()
+    role = auth['service_role']
 
     if not username:
         flash('SSO-Token enthält keinen Benutzernamen.', 'danger')
         return redirect(url_for('auth.login'))
 
-    auth_user_id = int(payload['sub'])
+    auth_user_id = int(claims['sub'])
     user = User.query.filter_by(auth_user_id=auth_user_id).first()
     if not user:
         user = User.query.filter_by(username=username).first()
@@ -92,7 +93,7 @@ def sso_login():
         user.password_hash = generate_password_hash(secrets.token_hex(32))
         db.session.add(user)
     if current_app.config.get('SSO_SYNC_ROLE', True):
-        user.sync_from_sso_claims(payload)
+        user.sync_from_sso_claims(claims)
     db.session.commit()
 
     session['user_id'] = user.id
@@ -104,6 +105,7 @@ def sso_login():
     session['profile_complete'] = user.profile_complete
     session['memberships'] = user.memberships_json or []
     session['permissions'] = user.permissions_json or []
+    session['claims_json'] = user.claims_json or {}
 
     memberships = session.get('memberships') or []
     available_codes = sorted({
@@ -114,7 +116,7 @@ def sso_login():
     if not available_codes:
         available_codes = ['SENIORS']
 
-    token_team = (payload.get('active_team_code') or '').strip().upper()
+    token_team = (claims.get('active_team_code') or '').strip().upper()
     if token_team and token_team in available_codes:
         session['active_team_code'] = token_team
     elif session.get('active_team_code') in available_codes:

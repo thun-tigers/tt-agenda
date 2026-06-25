@@ -14,22 +14,25 @@
     </div>
 
     <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-md p-6">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between mb-4 gap-3">
             <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <i class="bi bi-list-check text-indigo-600 dark:text-indigo-400"></i>
                 Aktivitäten
             </h2>
-            <a href="{{ url_for('admin.edit_training', id=training.id) }}" class="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition text-sm font-semibold">
-                <i class="bi bi-arrow-left"></i> Zum Template
-            </a>
+            <div class="flex items-center gap-2">
+                <div id="instance-activities-list-controls" class="js-smart-list-controls"></div>
+                <a href="{{ url_for('admin.edit_training', id=training.id) }}" class="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition text-sm font-semibold">
+                    <i class="bi bi-arrow-left"></i> Zum Template
+                </a>
+            </div>
         </div>
 
-        <div id="activities-list" class="space-y-2">
+        <div id="activities-list" class="space-y-2 js-smart-list" data-controls-host="instance-activities-list-controls">
             {% for activity in activities %}
             {% set activity_def = ACTIVITY_TYPE_DEFS.get(activity.activity_type, {}) %}
             {% set activity_label = activity_def.label if activity_def else activity.activity_type %}
             {% set activity_behavior = activity_def.behavior if activity_def else '' %}
-            <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200 dark:border-slate-600 p-4 hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600 transition-all activity-type-{{ activity.activity_type }}">
+            <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200 dark:border-slate-600 p-4 hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600 transition-all activity-type-{{ activity.activity_type }}" data-smart-list-item data-sort-time="{{ activity.start_time.strftime('%H:%M') }}">
                 <div class="flex gap-3 items-start">
                     <div class="flex flex-col gap-1 justify-start pt-0.5">
                         {% if not loop.first %}

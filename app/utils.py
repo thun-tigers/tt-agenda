@@ -7,6 +7,7 @@ import os
 from typing import List, Tuple, Optional, Dict, Any
 import requests
 from .models import Activity, ActivityInstance, Training, TrainingInstance, ActivityType
+from .authz import is_platform_admin, is_service_admin, normalize_permissions
 from .extensions import db
 
 logger = logging.getLogger(__name__)
@@ -195,8 +196,7 @@ def login_required(f):
 
 
 def get_user_permissions():
-    permissions = session.get('permissions') or []
-    return permissions if isinstance(permissions, list) else []
+    return normalize_permissions(session.get('permissions'))
 
 
 def get_user_memberships():
@@ -243,10 +243,12 @@ def get_active_team_name():
 
 
 def can_manage_agenda():
-    if session.get('user_role') == 'admin' or session.get('platform_role') == 'admin':
-        return True
     permissions = get_user_permissions()
-    if '*' in permissions or 'agenda:admin' in permissions or 'agenda:write' in permissions:
+    if is_platform_admin(session.get('platform_role'), permissions):
+        return True
+    if is_service_admin(session.get('user_role'), permissions):
+        return True
+    if 'agenda:admin' in permissions or 'agenda:write' in permissions:
         return True
     return any(
         permission.startswith('team:') and (permission.endswith(':write') or permission.endswith(':admin'))

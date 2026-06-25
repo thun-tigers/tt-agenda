@@ -2,6 +2,7 @@ from .extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
 from sqlalchemy.types import TypeDecorator, Text
+from .authz import normalize_auth_payload
 
 
 class JsonType(TypeDecorator):
@@ -104,13 +105,16 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
 
     def sync_from_sso_claims(self, payload):
-        self.auth_user_id = int(payload['sub'])
-        self.username = (payload.get('username') or self.username).strip()
-        self.role = payload.get('service_role') or payload.get('role') or 'user'
-        self.platform_role = payload.get('platform_role') or 'user'
-        self.display_name = payload.get('display_name') or self.username
-        self.email = payload.get('email')
-        self.profile_complete = bool(payload.get('profile_complete'))
-        self.memberships_json = payload.get('memberships') or []
-        self.permissions_json = payload.get('permissions') or []
-        self.claims_json = payload
+        auth = normalize_auth_payload(payload)
+        claims = auth['claims']
+
+        self.auth_user_id = int(claims['sub'])
+        self.username = (claims.get('username') or self.username).strip()
+        self.role = auth['service_role']
+        self.platform_role = auth['platform_role']
+        self.display_name = claims.get('display_name') or self.username
+        self.email = claims.get('email')
+        self.profile_complete = bool(claims.get('profile_complete'))
+        self.memberships_json = auth['memberships']
+        self.permissions_json = auth['permissions']
+        self.claims_json = claims
