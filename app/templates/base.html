@@ -1,531 +1,380 @@
 <!DOCTYPE html>
 <html lang="de" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Trainingsverwaltung{% endblock %}</title>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="application-name" content="TT-Agenda">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="TT-Agenda">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#4f46e5">
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    
-    <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    
-    <!-- Tailwind CSS from CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {}
-            }
-        }
-    </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>{% block title %}Agenda – Tigers{% endblock %}</title>
+<meta name="theme-color" content="#4f46e5">
 
-    <script>
-        // Apply saved preference (system/light/dark) as early as possible to avoid flashes
-        (function() {
-            function readCookie(name) {
-                const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-                return match ? decodeURIComponent(match[1]) : null;
-            }
-            const stored = readCookie('tt_theme_global') || readCookie('tt_theme') || localStorage.getItem('theme') || 'system';
-            const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            const effective = stored === 'system' ? system : stored;
-            const htmlEl = document.documentElement;
-            if (effective === 'dark') {
-                htmlEl.classList.add('dark');
-            } else {
-                htmlEl.classList.remove('dark');
-            }
-        })();
-    </script>
-    
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.13"></script>
-    
-    <style>
-        * { font-family: 'Inter', sans-serif; }
-        form :is(input[type='text'], input[type='email'], input[type='password'], input[type='search'], input[type='date'], input[type='time'], input[type='number'], select, textarea) {
-            padding-top: 0.55rem !important;
-            padding-bottom: 0.55rem !important;
-            padding-left: 0.75rem !important;
-            padding-right: 0.75rem !important;
-            font-size: 0.875rem !important;
-            line-height: 1.25rem !important;
-            border-radius: 0.75rem !important;
-        }
-        form label {
-            font-size: 0.75rem;
-            line-height: 1rem;
-            margin-bottom: 0.25rem;
-        }
-        html { scroll-behavior: smooth; }
-        
-        /* Aktivitätsfarben als CSS-Variablen */
-        :root {
-            {% for key in ACTIVITY_TYPE_ORDER %}
-            --color-{{ key }}: {{ LIGHT_MODE_COLORS.get(key, '#E8E8E8') }};
-            {% endfor %}
-        }
-        
-        html.dark {
-            {% for key in ACTIVITY_TYPE_ORDER %}
-            --color-{{ key }}: {{ DARK_MODE_COLORS.get(key, '#4A4A4A') }};
-            {% endfor %}
-        }
-        
-        /* Smooth transitions */
-        @media (prefers-reduced-motion: no-preference) {
-            * { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
-        }
-    </style>
-    
-    {% block extra_head %}{% endblock %}
+<!-- PWA -->
+<meta name="application-name" content="TT-Agenda">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TT-Agenda">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',
+            500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81',950:'#1e1b4b'
+          }
+        },
+        fontFamily: { sans: ['Inter','sans-serif'] }
+      }
+    }
+  }
+</script>
+<script>
+  (function() {
+    function readCookie(name) {
+      const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+      return match ? decodeURIComponent(match[1]) : null;
+    }
+    const stored = readCookie('tt_theme_global') || readCookie('tt_theme') || localStorage.getItem('theme') || 'system';
+    const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const effective = stored === 'system' ? system : stored;
+    if (effective === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  })();
+</script>
+<script src="https://unpkg.com/htmx.org@1.9.13"></script>
+
+<style>
+  * { font-family: 'Inter', sans-serif; }
+  form :is(input[type='text'], input[type='email'], input[type='password'], input[type='search'], input[type='date'], input[type='time'], input[type='number'], select, textarea) {
+    padding-top: 0.55rem !important;
+    padding-bottom: 0.55rem !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+    border-radius: 0.75rem !important;
+  }
+  form label { font-size: 0.75rem; line-height: 1rem; margin-bottom: 0.25rem; }
+  html { scroll-behavior: smooth; }
+  .glass { backdrop-filter: saturate(180%) blur(16px); }
+  .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+  .dark, .dark html { color-scheme: dark; }
+  /* Aktivitätsfarben */
+  :root {
+    {% for key in ACTIVITY_TYPE_ORDER %}
+    --color-{{ key }}: {{ LIGHT_MODE_COLORS.get(key, '#E8E8E8') }};
+    {% endfor %}
+  }
+  html.dark {
+    {% for key in ACTIVITY_TYPE_ORDER %}
+    --color-{{ key }}: {{ DARK_MODE_COLORS.get(key, '#4A4A4A') }};
+    {% endfor %}
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-slideIn { animation: slideIn 0.3s ease-out; }
+  @media (prefers-reduced-motion: no-preference) {
+    * { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+  }
+</style>
+{% block extra_head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-slate-900 dark:text-slate-50">
-    <!-- Navigation -->
-    <header class="sticky top-0 z-50 border-b border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl shadow-sm">
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex min-h-[4.5rem] items-center justify-between gap-4 py-3">
+<body class="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-50 antialiased">
 
-                <!-- Logo -->
-                <a href="{{ url_for('main.index') }}" class="flex items-center gap-3 text-slate-900 dark:text-white hover:opacity-90 transition">
-                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[radial-gradient(circle_at_top_left,_#c7d2fe,_#6366f1_60%,_#1e1b4b)] text-white shadow-lg shadow-indigo-500/20">
-                        <i class="bi bi-calendar-check text-lg"></i>
-                    </div>
-                    <div>
-                        <div class="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-indigo-500 dark:text-indigo-300">Tigers</div>
-                        <div class="text-lg font-semibold leading-tight">Agenda</div>
-                    </div>
-                </a>
+{% if session.get('user_id') %}
+<!-- ===== App Bar (eingeloggt) ===== -->
+<header class="sticky top-0 z-40 border-b border-slate-200/80 dark:border-slate-800 bg-white/85 dark:bg-slate-900/85 glass">
+  <div class="flex items-center gap-3 px-4 h-14 max-w-7xl mx-auto">
+    <a href="{{ auth_dashboard_url }}" class="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-white ring-1 ring-slate-200 dark:ring-slate-500 shadow-sm">
+      <img src="{{ url_for('static', filename='tt-logo.png') }}" alt="TT" class="w-full h-full object-contain p-0.5">
+    </a>
+    <div class="min-w-0">
+      <div class="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-indigo-500 dark:text-indigo-300 leading-none">Thun Tigers</div>
+      <div class="flex items-center gap-1.5">
+        <i class="bi bi-calendar-week-fill text-sm text-indigo-600 dark:text-indigo-400"></i>
+        <span class="text-sm font-bold leading-tight truncate">Agenda</span>
+      </div>
+    </div>
 
-                <!-- Desktop Pill Nav -->
-                <div class="hidden lg:flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/50 p-1.5">
-                    {% set ep = request.endpoint %}
-                    <a href="{{ url_for('main.index') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900/60' if ep == 'main.index' else 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}">
-                        <i class="bi bi-house-door text-sm"></i><span>Übersicht</span>
-                    </a>
-                    <a href="{{ url_for('main.live') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ 'bg-red-500 text-white shadow-sm' if training_status == 'running' else ('bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900/60' if ep == 'main.live' else 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white') }}">
-                        <i class="bi bi-broadcast text-sm"></i><span>Live</span>
-                        {% if training_status == 'running' %}<span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>{% endif %}
-                    </a>
-                    {% if can_manage_agenda() %}
-                    <a href="{{ url_for('admin.admin_trainings') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition {{ 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900/60' if ep in ['admin.admin_trainings', 'admin.admin_activity_types', 'admin.admin_backup'] else 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}">
-                        <i class="bi bi-gear-fill text-sm"></i><span>Admin</span>
-                    </a>
-                    {% endif %}
-                </div>
+    <!-- Desktop Nav -->
+    <div class="hidden lg:flex items-center gap-1 ml-auto mr-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/50 p-1">
+      {% set ep = request.endpoint %}
+      <a href="{{ url_for('main.index') }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition
+        {{ 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900' if ep == 'main.index' else 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900' }}">
+        <i class="bi bi-house-door"></i>Übersicht
+      </a>
+      <a href="{{ url_for('main.live') }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition
+        {{ 'bg-red-500 text-white shadow-sm' if training_status == 'running' else ('bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900' if ep == 'main.live' else 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900') }}">
+        <i class="bi bi-broadcast"></i>Live
+        {% if training_status == 'running' %}<span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>{% endif %}
+      </a>
+      {% if can_manage_agenda() %}
+      <a href="{{ url_for('admin.admin_trainings') }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition
+        {{ 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900' if ep in ['admin.admin_trainings','admin.admin_activity_types','admin.admin_backup'] else 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900' }}">
+        <i class="bi bi-gear-fill"></i>Admin
+      </a>
+      {% endif %}
+    </div>
 
-                <!-- Right -->
-                <div class="flex items-center gap-2 sm:gap-4">
-                    {% if session.get('user_id') %}
-                        {% if available_teams|length > 1 %}
-                        <form method="POST" action="{{ url_for('auth.switch_team') }}" class="hidden md:block">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="next" value="{{ request.full_path }}">
-                            <label class="sr-only" for="teamSelect">Mannschaft wählen</label>
-                            <select id="teamSelect" name="team_code" onchange="this.form.submit()" class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                {% for team in available_teams %}
-                                <option value="{{ team.code }}" {{ 'selected' if team.code == active_team_code else '' }}>{{ team.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </form>
-                        {% else %}
-                        <span class="hidden md:inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300">
-                            <i class="bi bi-people"></i><span>{{ active_team_name }}</span>
-                        </span>
-                        {% endif %}
-                    {% endif %}
+    <div class="ml-auto lg:ml-0 flex items-center gap-1.5">
+      {% if available_teams|length > 1 %}
+      <form method="POST" action="{{ url_for('auth.switch_team') }}" class="hidden md:block">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.full_path }}">
+        <select name="team_code" onchange="this.form.submit()" class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-2 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          {% for team in available_teams %}
+          <option value="{{ team.code }}" {{ 'selected' if team.code == active_team_code else '' }}>{{ team.name }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% else %}
+      <span class="hidden md:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-2 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-300">
+        <i class="bi bi-people"></i>{{ active_team_name }}
+      </span>
+      {% endif %}
 
-                    <a href="{{ auth_dashboard_url }}" class="hidden md:inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-indigo-200 dark:hover:border-indigo-700 transition">
-                        <i class="bi bi-grid"></i><span>Plattform</span>
-                    </a>
+      <button id="themeToggle" class="h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Design">
+        <i class="bi bi-moon-fill" id="themeIcon"></i>
+      </button>
 
-                    <button id="pwaInstallBtn" class="hidden p-2 text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition" title="App installieren">
-                        <i class="bi bi-download"></i>
-                    </button>
+      <button id="pwaInstallBtn" class="hidden h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 transition" title="App installieren">
+        <i class="bi bi-download"></i>
+      </button>
 
-                    <button id="themeToggle" class="p-2 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Design-Modus wechseln">
-                        <i class="bi bi-moon-fill" id="themeIcon"></i>
-                    </button>
+      <button id="mobileMenuBtn" class="lg:hidden h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" aria-label="Menü">
+        <i class="bi bi-list text-lg" id="mobileMenuIcon"></i>
+      </button>
 
-                    <button id="mobileMenuBtn" class="lg:hidden p-2 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" aria-label="Menü öffnen">
-                        <i class="bi bi-list text-xl" id="mobileMenuIcon"></i>
-                    </button>
+      <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-600">
+        <a href="{{ auth_dashboard_url }}profile" class="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          <div class="hidden sm:block text-right">
+            <div class="text-xs font-semibold leading-tight">{{ session.get('username') }}</div>
+            <div class="text-[10px] text-indigo-500 dark:text-indigo-400 leading-tight">{% if can_manage_agenda() %}Admin{% else %}Mitglied{% endif %}</div>
+          </div>
+          <div class="h-8 w-8 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold text-xs">{{ session.get('username', '?')[0].upper() }}</div>
+        </a>
+        <form method="POST" action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition" title="Abmelden">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
 
-                    {% if session.get('user_id') %}
-                    <div class="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-600">
-                        <a href="{{ auth_dashboard_url }}profile" class="inline-flex items-center gap-3 rounded-lg px-1.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Mein Profil">
-                            <div class="hidden sm:block text-right">
-                                <div class="text-sm font-medium">{{ session.get('username') }}</div>
-                                <div class="text-xs text-indigo-500 dark:text-indigo-400">{% if can_manage_agenda() %}Administrator{% else %}Mitglied{% endif %}</div>
-                            </div>
-                            <div class="w-8 h-8 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-semibold text-sm">
-                                {{ session.get('username', '?')[0].upper() }}
-                            </div>
-                        </a>
-                        <form method="POST" action="{{ url_for('auth.logout') }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="p-2 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition" title="Abmelden">
-                                <i class="bi bi-box-arrow-right"></i>
-                            </button>
-                        </form>
-                    </div>
-                    {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 rounded-lg transition shadow-md hover:shadow-lg">
-                        <i class="bi bi-box-arrow-in-right mr-2"></i>Anmelden
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="lg:hidden hidden border-t border-slate-200 dark:border-slate-800">
+    <div class="px-4 py-3 space-y-1">
+      {% set ep = request.endpoint %}
+      <a href="{{ url_for('main.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'main.index' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+        <i class="bi bi-house-door"></i>Übersicht
+      </a>
+      <a href="{{ url_for('main.live') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'main.live' or training_status == 'running' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+        <i class="bi bi-broadcast"></i>Live
+        {% if training_status == 'running' %}<span class="w-2 h-2 bg-red-500 rounded-full animate-pulse ml-auto"></span>{% endif %}
+      </a>
+      {% if can_manage_agenda() %}
+      <a href="{{ url_for('admin.admin_trainings') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep in ['admin.admin_trainings','admin.admin_activity_types','admin.admin_backup'] else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+        <i class="bi bi-calendar-check"></i>Trainings
+      </a>
+      <a href="{{ url_for('admin.admin_activity_types') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'admin.admin_activity_types' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+        <i class="bi bi-tags"></i>Aktivitätstypen
+      </a>
+      <a href="{{ url_for('admin.admin_backup') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'admin.admin_backup' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+        <i class="bi bi-database-down"></i>Backup
+      </a>
+      {% endif %}
+      <hr class="border-slate-200 dark:border-slate-700">
+      {% if available_teams|length > 1 %}
+      <form method="POST" action="{{ url_for('auth.switch_team') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.full_path }}">
+        <label class="sr-only" for="tm">Mannschaft</label>
+        <select id="tm" name="team_code" onchange="this.form.submit()" class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm">
+          {% for team in available_teams %}
+          <option value="{{ team.code }}" {{ 'selected' if team.code == active_team_code else '' }}>{{ team.name }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% else %}
+      <span class="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300">
+        <i class="bi bi-people"></i>{{ active_team_name }}
+      </span>
+      {% endif %}
+      <a href="{{ auth_dashboard_url }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">
+        <i class="bi bi-grid"></i>Zur Plattform
+      </a>
+      <div id="pwaInstallMobileContainer" class="hidden">
+        <button id="pwaInstallBtnMobile" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30">
+          <i class="bi bi-download"></i>App installieren
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+{% else %}
+<!-- ===== Minimal App Bar (ausgeloggt) ===== -->
+<header class="sticky top-0 z-40 border-b border-slate-200/80 dark:border-slate-800 bg-white/85 dark:bg-slate-900/85 glass">
+  <div class="flex items-center gap-3 px-4 h-14 max-w-7xl mx-auto">
+    <a href="{{ auth_dashboard_url }}" class="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-white ring-1 ring-slate-200 dark:ring-slate-500 shadow-sm">
+      <img src="{{ url_for('static', filename='tt-logo.png') }}" alt="TT" class="w-full h-full object-contain p-0.5">
+    </a>
+    <div class="min-w-0">
+      <div class="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-indigo-500 dark:text-indigo-300 leading-none">Thun Tigers</div>
+      <div class="text-sm font-bold leading-tight">Agenda</div>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <button id="themeToggle" class="h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Design">
+        <i class="bi bi-moon-fill" id="themeIcon"></i>
+      </button>
+      <a href="{{ url_for('auth.login') }}" class="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 rounded-lg transition shadow-sm">
+        <i class="bi bi-box-arrow-in-right mr-1"></i>Anmelden
+      </a>
+    </div>
+  </div>
+</header>
+{% endif %}
 
-            <!-- Mobile Menu -->
-            <div id="mobileMenu" class="hidden lg:hidden pb-4">
-                <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/70 shadow-sm overflow-hidden">
-                    <div class="grid grid-cols-1 gap-2 p-3 border-b border-slate-200 dark:border-slate-700 sm:grid-cols-2">
-                        {% set ep = request.endpoint %}
-                        <a href="{{ url_for('main.index') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ 'bg-indigo-600 text-white shadow-sm' if ep == 'main.index' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-                            <i class="bi bi-house-door"></i><span>Übersicht</span>
-                        </a>
-                        <a href="{{ url_for('main.live') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ 'bg-red-500 text-white shadow-sm' if training_status == 'running' else ('bg-indigo-600 text-white shadow-sm' if ep == 'main.live' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700') }}">
-                            <i class="bi bi-broadcast"></i><span>Live</span>
-                            {% if training_status == 'running' %}<span class="ml-auto w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>{% endif %}
-                        </a>
-                        {% if can_manage_agenda() %}
-                        <a href="{{ url_for('admin.admin_trainings') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ 'bg-indigo-600 text-white shadow-sm' if ep in ['admin.admin_trainings', 'admin.admin_activity_types', 'admin.admin_backup'] else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-                            <i class="bi bi-calendar-check"></i><span>Trainings</span>
-                        </a>
-                        <a href="{{ url_for('admin.admin_activity_types') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ 'bg-indigo-600 text-white shadow-sm' if ep == 'admin.admin_activity_types' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-                            <i class="bi bi-tags"></i><span>Aktivitätstypen</span>
-                        </a>
-                        <a href="{{ url_for('admin.admin_backup') }}" class="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ 'bg-indigo-600 text-white shadow-sm' if ep == 'admin.admin_backup' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-                            <i class="bi bi-database-down"></i><span>Backup</span>
-                        </a>
-                        {% endif %}
-                    </div>
-                    <div class="p-3 flex items-center gap-2">
-                        {% if session.get('user_id') %}
-                            {% if available_teams|length > 1 %}
-                            <form method="POST" action="{{ url_for('auth.switch_team') }}" class="flex-1">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="next" value="{{ request.full_path }}">
-                                <label class="sr-only" for="teamSelectMobile">Mannschaft wählen</label>
-                                <select id="teamSelectMobile" name="team_code" onchange="this.form.submit()" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                    {% for team in available_teams %}
-                                    <option value="{{ team.code }}" {{ 'selected' if team.code == active_team_code else '' }}>{{ team.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </form>
-                            {% else %}
-                            <span class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800">
-                                <i class="bi bi-people"></i><span>{{ active_team_name }}</span>
-                            </span>
-                            {% endif %}
-                        {% endif %}
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div id="messagesContainer" class="max-w-7xl mx-auto px-4 pt-4 space-y-1.5">
+  {% for category, message in messages %}
+  <div class="flash-message flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border animate-slideIn
+    {% if category == 'success' %}bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800
+    {% elif category == 'danger' or category == 'error' %}bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800
+    {% elif category == 'warning' %}bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border-amber-200 dark:border-amber-800
+    {% else %}bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800{% endif %}" role="alert">
+    <i class="bi {% if category == 'success' %}bi-check-circle-fill{% elif category in ('danger','error') %}bi-exclamation-circle-fill{% elif category == 'warning' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %}"></i>
+    <span class="flex-1">{{ message }}</span>
+    <button onclick="this.closest('.flash-message').remove()" class="text-lg font-light opacity-70 hover:opacity-100">&times;</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
 
-                        <a href="{{ auth_dashboard_url }}" class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
-                            <i class="bi bi-grid"></i><span>Zur Plattform</span>
-                        </a>
-                        <div id="pwaInstallMobileContainer" class="hidden">
-                            <button id="pwaInstallBtnMobile" class="inline-flex items-center gap-2 rounded-xl border border-green-200 dark:border-green-800 px-3 py-2.5 text-sm font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition">
-                                <i class="bi bi-download"></i><span>App installieren</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <!-- Main Content -->
-    <main class="min-h-screen">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                <div id="messagesContainer" class="mb-6 space-y-3">
-                    {% for category, message in messages %}
-                    <div class="flash-message p-4 rounded-lg border-l-4 flex items-center justify-between shadow-sm animate-slideIn {% if category == 'success' %}bg-green-50 dark:bg-green-900/30 border-green-500 text-green-800 dark:text-green-200{% elif category == 'danger' or category == 'error' %}bg-red-50 dark:bg-red-900/30 border-red-500 text-red-800 dark:text-red-200{% elif category == 'warning' %}bg-yellow-50 dark:bg-yellow-900/30 border-yellow-500 text-yellow-800 dark:text-yellow-200{% else %}bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-800 dark:text-blue-200{% endif %}" role="alert">
-                        <div class="flex items-center gap-3">
-                            {% if category == 'success' %}
-                            <i class="bi bi-check-circle-fill text-lg"></i>
-                            {% elif category == 'danger' or category == 'error' %}
-                            <i class="bi bi-exclamation-circle-fill text-lg"></i>
-                            {% elif category == 'warning' %}
-                            <i class="bi bi-exclamation-triangle-fill text-lg"></i>
-                            {% else %}
-                            <i class="bi bi-info-circle-fill text-lg"></i>
-                            {% endif %}
-                            <span>{{ message }}</span>
-                        </div>
-                        <button onclick="this.closest('.flash-message').remove()" class="text-xl font-light opacity-70 hover:opacity-100 transition" type="button" aria-label="Schließen">
-                            &times;
-                        </button>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            {% endwith %}
-            
-            <!-- Page Content -->
-            {% block content %}{% endblock %}
-        </div>
-    </main>
-    
-    <!-- Footer -->
-    <footer class="mt-16 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center text-sm text-slate-600 dark:text-slate-400">
-                <p>&copy; 2026 <strong>Thun Tigers</strong> – Trainingsverwaltung</p>
-            </div>
-        </div>
-    </footer>
-    
-    <!-- Scripts -->
-    {% block scripts %}{% endblock %}
-    
-    <script>
-        // Theme Toggle (system -> light -> dark) with cookie sync across services
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const html = document.documentElement;
+<!-- Main Content -->
+<main class="min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </div>
+</main>
 
-        function readCookie(name) {
-            const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-            return match ? decodeURIComponent(match[1]) : null;
-        }
+{% if session.get('user_id') %}
+<!-- Bottom Tab Bar (mobile only) -->
+{% set active_tab = active_tab|default('home') %}
+<nav class="sticky bottom-0 z-40 lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 glass safe-bottom">
+  <div class="grid grid-cols-4 max-w-lg mx-auto">
+    {% set tabs = [
+      ('home', 'bi-house', 'Heute', 'main.index'),
+      ('trainings', 'bi-calendar2-week', 'Trainings', 'admin.admin_trainings' if can_manage_agenda() else 'main.index'),
+      ('live', 'bi-broadcast', 'Live', 'main.live'),
+      ('profile', 'bi-person', 'Profil', auth_dashboard_url ~ 'profile'),
+    ] %}
+    {% for tab_id, icon, label, endpoint in tabs %}
+    <a href="{{ endpoint }}" class="flex flex-col items-center gap-0.5 py-3 transition
+      {{ 'text-indigo-600 dark:text-indigo-400' if active_tab == tab_id else 'text-slate-400' }}">
+      <i class="bi {{ icon }} text-lg"></i>
+      <span class="text-[10px] font-semibold">{{ label }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</nav>
+{% endif %}
 
-        function resolveTheme(preference) {
-            if (preference === 'system') {
-                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            }
-            return preference;
-        }
+<!-- Footer -->
+<footer class="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 py-6">
+  <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 dark:text-slate-400">
+    <p>&copy; 2026 <strong>Thun Tigers</strong> – Trainingsverwaltung</p>
+  </div>
+</footer>
 
-        function applyTheme(preference) {
-            const effective = resolveTheme(preference);
+<!-- Scripts -->
+<script>
+  const toggle = document.getElementById('themeToggle');
+  const icon = document.getElementById('themeIcon');
+  const html = document.documentElement;
 
-            if (effective === 'dark') {
-                html.classList.add('dark');
-            } else {
-                html.classList.remove('dark');
-            }
+  function readCookie(name) {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+  function resolveTheme(p) { return p === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : p; }
+  function applyTheme(p) {
+    const e = resolveTheme(p);
+    e === 'dark' ? html.classList.add('dark') : html.classList.remove('dark');
+    if (p === 'system') { icon.className = 'bi bi-circle-half'; toggle.title = 'System'; }
+    else if (p === 'dark') { icon.className = 'bi bi-sun-fill'; toggle.title = 'Hell'; }
+    else { icon.className = 'bi bi-moon-fill'; toggle.title = 'Dunkel'; }
+  }
+  function saveTheme(p) {
+    localStorage.setItem('theme', p);
+    const host = window.location.hostname || '';
+    let d = '';
+    if (host && host !== 'localhost' && !/^\d+\.\d+\.\d+\.\d+$/.test(host)) { const parts = host.split('.'); if (parts.length >= 2) d = '; domain=.' + parts.slice(-2).join('.'); }
+    const s = '; path=/; max-age=31536000; samesite=lax' + d;
+    document.cookie = 'tt_theme=' + encodeURIComponent(p) + s;
+    document.cookie = 'tt_theme_global=' + encodeURIComponent(p) + s;
+    applyTheme(p);
+  }
+  let ct = readCookie('tt_theme_global') || readCookie('tt_theme') || localStorage.getItem('theme') || 'system';
+  if (!['light','dark','system'].includes(ct)) ct = 'system';
+  applyTheme(ct);
+  if (toggle) toggle.addEventListener('click', () => { const o = ['system','light','dark']; const i = o.indexOf(ct); ct = o[(i+1)%o.length]; saveTheme(ct); });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (ct === 'system') applyTheme('system'); });
 
-            if (preference === 'system') {
-                themeIcon.className = 'bi bi-circle-half';
-                themeToggle.title = 'Design-Modus: System';
-            } else if (preference === 'dark') {
-                themeIcon.className = 'bi bi-sun-fill';
-                themeToggle.title = 'Design-Modus: Dunkel';
-            } else {
-                themeIcon.className = 'bi bi-moon-fill';
-                themeToggle.title = 'Design-Modus: Hell';
-            }
-        }
+  // Mobile menu
+  const mBtn = document.getElementById('mobileMenuBtn');
+  const mMenu = document.getElementById('mobileMenu');
+  const mIcon = document.getElementById('mobileMenuIcon');
+  if (mBtn && mMenu) {
+    mBtn.addEventListener('click', () => {
+      const h = mMenu.classList.toggle('hidden');
+      mIcon.classList.toggle('bi-list', h);
+      mIcon.classList.toggle('bi-x-lg', !h);
+      mBtn.setAttribute('aria-label', h ? 'Menü öffnen' : 'Menü schließen');
+    });
+    mMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => { mMenu.classList.add('hidden'); mIcon.classList.remove('bi-x-lg'); mIcon.classList.add('bi-list'); }));
+  }
 
-        function saveTheme(preference) {
-            localStorage.setItem('theme', preference);
-            const host = window.location.hostname || '';
-            let cookieDomain = '';
-            if (host && host !== 'localhost' && !/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
-                const parts = host.split('.');
-                if (parts.length >= 2) {
-                    cookieDomain = '; domain=.' + parts.slice(-2).join('.');
-                }
-            }
-            const suffix = '; path=/; max-age=31536000; samesite=lax' + cookieDomain;
-            document.cookie = 'tt_theme=' + encodeURIComponent(preference) + suffix;
-            document.cookie = 'tt_theme_global=' + encodeURIComponent(preference) + suffix;
-            applyTheme(preference);
-        }
+  // Auto-hide flash messages
+  document.querySelectorAll('.flash-message').forEach(msg => {
+    setTimeout(() => { msg.style.opacity = '0'; msg.style.transition = 'opacity 0.3s ease-out'; setTimeout(() => msg.remove(), 300); }, 5000);
+  });
 
-        let currentTheme = readCookie('tt_theme_global') || readCookie('tt_theme') || localStorage.getItem('theme') || 'system';
-        if (!['light', 'dark', 'system'].includes(currentTheme)) {
-            currentTheme = 'system';
-        }
-        applyTheme(currentTheme);
+  // PWA Service Worker & Install
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('/static/service-worker.js').catch(()=>{}); });
+  }
+  let deferredPrompt;
+  const pwaBtn = document.getElementById('pwaInstallBtn');
+  const pwaBtnM = document.getElementById('pwaInstallBtnMobile');
+  const pwaCont = document.getElementById('pwaInstallMobileContainer');
+  function showInstall() { if (pwaBtn) pwaBtn.classList.remove('hidden'); if (pwaCont) pwaCont.classList.remove('hidden'); }
+  function hideInstall() { if (pwaBtn) pwaBtn.classList.add('hidden'); if (pwaCont) pwaCont.classList.add('hidden'); }
+  async function triggerInstall() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    hideInstall();
+  }
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; showInstall(); });
+  window.addEventListener('appinstalled', () => { deferredPrompt = null; hideInstall(); });
+  if (pwaBtn) pwaBtn.addEventListener('click', triggerInstall);
+  if (pwaBtnM) pwaBtnM.addEventListener('click', triggerInstall);
+</script>
 
-        themeToggle.addEventListener('click', () => {
-            const order = ['system', 'light', 'dark'];
-            const idx = order.indexOf(currentTheme);
-            currentTheme = order[(idx + 1) % order.length];
-            saveTheme(currentTheme);
-        });
-
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            if (currentTheme === 'system') {
-                applyTheme('system');
-            }
-        });
-        // Mobile menu toggle
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const mobileMenu = document.getElementById('mobileMenu');
-        const mobileMenuIcon = document.getElementById('mobileMenuIcon');
-        
-        mobileMenuBtn.addEventListener('click', () => {
-            const isHidden = mobileMenu.classList.toggle('hidden');
-            // Toggle icon between hamburger and X
-            if (isHidden) {
-                mobileMenuIcon.classList.remove('bi-x-lg');
-                mobileMenuIcon.classList.add('bi-list');
-                mobileMenuBtn.setAttribute('aria-label', 'Menü öffnen');
-            } else {
-                mobileMenuIcon.classList.remove('bi-list');
-                mobileMenuIcon.classList.add('bi-x-lg');
-                mobileMenuBtn.setAttribute('aria-label', 'Menü schließen');
-            }
-        });
-        
-        // Close mobile menu when clicking on links
-        mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                mobileMenu.classList.add('hidden');
-                mobileMenuIcon.classList.remove('bi-x-lg');
-                mobileMenuIcon.classList.add('bi-list');
-                mobileMenuBtn.setAttribute('aria-label', 'Menü öffnen');
-            });
-        });
-        
-        // Auto-hide flash messages after 5 seconds
-        document.querySelectorAll('.flash-message').forEach(msg => {
-            setTimeout(() => {
-                msg.style.opacity = '0';
-                msg.style.transition = 'opacity 0.3s ease-out';
-                setTimeout(() => msg.remove(), 300);
-            }, 5000);
-        });
-    </script>
-    
-    <style>
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .animate-slideIn {
-            animation: slideIn 0.3s ease-out;
-        }
-    </style>
-    
-    <!-- PWA Service Worker Registration & Install Prompt -->
-    <script>
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/static/service-worker.js')
-                    .then(registration => {
-                        console.log('Service Worker registriert:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('Service Worker Registrierung fehlgeschlagen:', error);
-                    });
-            });
-        }
-        
-        // PWA Install Prompt Handler
-        let deferredPrompt;
-        const pwaInstallBtn = document.getElementById('pwaInstallBtn');
-        const pwaInstallBtnMobile = document.getElementById('pwaInstallBtnMobile');
-        const pwaInstallMobileContainer = document.getElementById('pwaInstallMobileContainer');
-        
-        // Show install buttons when app is installable
-        function showInstallButtons() {
-            if (pwaInstallBtn) {
-                pwaInstallBtn.classList.remove('hidden');
-            }
-            if (pwaInstallMobileContainer) {
-                pwaInstallMobileContainer.classList.remove('hidden');
-            }
-        }
-        
-        // Hide install buttons after installation
-        function hideInstallButtons() {
-            if (pwaInstallBtn) {
-                pwaInstallBtn.classList.add('hidden');
-            }
-            if (pwaInstallMobileContainer) {
-                pwaInstallMobileContainer.classList.add('hidden');
-            }
-        }
-        
-        // Trigger PWA installation
-        async function triggerInstall() {
-            if (!deferredPrompt) {
-                console.log('Install prompt not available');
-                return;
-            }
-            
-            // Show the install prompt
-            deferredPrompt.prompt();
-            
-            // Wait for user response
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log('Install prompt outcome:', outcome);
-            
-            // Clear the deferred prompt
-            deferredPrompt = null;
-            
-            // Hide buttons regardless of outcome (can't show prompt again)
-            hideInstallButtons();
-        }
-        
-        // Listen for beforeinstallprompt event
-        window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent default browser install banner
-            e.preventDefault();
-            
-            // Store the event for later use
-            deferredPrompt = e;
-            
-            // Show install buttons
-            showInstallButtons();
-            console.log('PWA kann installiert werden');
-        });
-        
-        // Add click handlers to install buttons
-        if (pwaInstallBtn) {
-            pwaInstallBtn.addEventListener('click', triggerInstall);
-        }
-        if (pwaInstallBtnMobile) {
-            pwaInstallBtnMobile.addEventListener('click', triggerInstall);
-        }
-        
-        // Hide buttons when app is installed
-        window.addEventListener('appinstalled', () => {
-            console.log('PWA wurde installiert');
-            hideInstallButtons();
-            deferredPrompt = null;
-        });
-        
-        // Check if already installed (standalone mode)
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            hideInstallButtons();
-        }
-    </script>
-
-    <script src="{{ url_for('static', filename='js/table_enhancements.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/list_enhancements.js') }}"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>
