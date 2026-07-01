@@ -1,7 +1,7 @@
 services:
   web:
     build: .
-    image: ghcr.io/swisi/tt-agenda:latest
+    image: ghcr.io/thun-tigers/tt-agenda:beta
     container_name: tt-agenda
     ports:
       - "8086:5000"
