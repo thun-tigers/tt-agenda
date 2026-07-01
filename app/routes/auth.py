@@ -124,7 +124,6 @@ def sso_login():
     else:
         session['active_team_code'] = available_codes[0]
 
-    flash('Erfolgreich via SSO angemeldet.', 'success')
     next_page = request.args.get('next')
     if next_page and is_safe_url(next_page):
         return redirect(next_page)

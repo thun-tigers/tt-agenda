@@ -109,7 +109,7 @@
       {% set ep = request.endpoint %}
       <a href="{{ url_for('main.index') }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition
         {{ 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900' if ep == 'main.index' else 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900' }}">
-        <i class="bi bi-house-door"></i>Übersicht
+        <i class="bi bi-house-door-fill"></i>Übersicht
       </a>
       <a href="{{ url_for('main.live') }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition
         {{ 'bg-red-500 text-white shadow-sm' if training_status == 'running' else ('bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900' if ep == 'main.live' else 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900') }}">
@@ -140,6 +140,10 @@
         <i class="bi bi-people"></i>{{ active_team_name }}
       </span>
       {% endif %}
+
+      <a href="{{ auth_dashboard_url }}" class="hidden lg:inline-flex h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Apps">
+        <i class="bi bi-grid-fill"></i>
+      </a>
 
       <button id="themeToggle" class="h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Design">
         <i class="bi bi-moon-fill" id="themeIcon"></i>
@@ -176,7 +180,7 @@
     <div class="px-4 py-3 space-y-1">
       {% set ep = request.endpoint %}
       <a href="{{ url_for('main.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'main.index' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-        <i class="bi bi-house-door"></i>Übersicht
+        <i class="bi bi-house-door-fill"></i>Übersicht
       </a>
       <a href="{{ url_for('main.live') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'main.live' or training_status == 'running' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
         <i class="bi bi-broadcast"></i>Live
@@ -184,10 +188,10 @@
       </a>
       {% if can_manage_agenda() %}
       <a href="{{ url_for('admin.admin_trainings') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep in ['admin.admin_trainings','admin.admin_activity_types','admin.admin_backup'] else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-        <i class="bi bi-calendar-check"></i>Trainings
+        <i class="bi bi-calendar-check-fill"></i>Trainings
       </a>
       <a href="{{ url_for('admin.admin_activity_types') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'admin.admin_activity_types' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-        <i class="bi bi-tags"></i>Aktivitätstypen
+        <i class="bi bi-tags-fill"></i>Aktivitätstypen
       </a>
       <a href="{{ url_for('admin.admin_backup') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'admin.admin_backup' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
         <i class="bi bi-database-down"></i>Backup
@@ -211,7 +215,7 @@
       </span>
       {% endif %}
       <a href="{{ auth_dashboard_url }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">
-        <i class="bi bi-grid"></i>Zur Plattform
+        <i class="bi bi-grid-fill"></i>Apps
       </a>
       <div id="pwaInstallMobileContainer" class="hidden">
         <button id="pwaInstallBtnMobile" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30">
@@ -276,13 +280,13 @@
 <nav class="sticky bottom-0 z-40 lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 glass safe-bottom">
   <div class="grid grid-cols-4 max-w-lg mx-auto">
     {% set tabs = [
-      ('home', 'bi-house', 'Heute', 'main.index'),
-      ('trainings', 'bi-calendar2-week', 'Trainings', 'admin.admin_trainings' if can_manage_agenda() else 'main.index'),
+      ('home', 'bi-house-fill', 'Heute', 'main.index'),
+      ('trainings', 'bi-calendar2-week-fill', 'Trainings', 'admin.admin_trainings' if can_manage_agenda() else 'main.index'),
       ('live', 'bi-broadcast', 'Live', 'main.live'),
-      ('profile', 'bi-person', 'Profil', auth_dashboard_url ~ 'profile'),
+      ('profile', 'bi-person-fill', 'Profil', auth_dashboard_url ~ 'profile'),
     ] %}
     {% for tab_id, icon, label, endpoint in tabs %}
-    <a href="{{ endpoint }}" class="flex flex-col items-center gap-0.5 py-3 transition
+    <a href="{% if tab_id == 'profile' %}{{ endpoint }}{% else %}{{ url_for(endpoint) }}{% endif %}" class="flex flex-col items-center gap-0.5 py-3 transition
       {{ 'text-indigo-600 dark:text-indigo-400' if active_tab == tab_id else 'text-slate-400' }}">
       <i class="bi {{ icon }} text-lg"></i>
       <span class="text-[10px] font-semibold">{{ label }}</span>

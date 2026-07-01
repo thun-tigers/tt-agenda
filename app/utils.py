@@ -464,26 +464,34 @@ def get_upcoming_trainings(trainings: List[Training], activities_by_training: Di
         for date in next_dates:
             instance = instances_by_key.get((training.id, date))
             activities, is_cancelled = resolve_activities_for_date(training, date, activities_by_training, instances_by_key, instance_activities_by_id)
+            display_activities = activities
             if is_cancelled:
-                continue
-            timeline, start_dt, end_dt = get_timeline_from_activities(activities, date)
+                display_activities = instance_activities_by_id.get(instance.id, []) if instance else []
+                if not display_activities:
+                    display_activities = template_activities
+            timeline, start_dt, end_dt = get_timeline_from_activities(display_activities, date)
             if not timeline:
                 continue
 
             is_today = date == today
             is_running = is_today and start_dt <= now < end_dt
             is_upcoming = is_today and now < start_dt
+            occurrence_id = f'{training.id}:{date.isoformat()}'
 
             upcoming_trainings.append({
                 'training': training,
+                'template_id': training.id,
+                'instance_id': instance.id if instance else None,
+                'occurrence_id': occurrence_id,
                 'date': date,
                 'start_time': start_dt.time(),
                 'end_time': end_dt.time(),
                 'is_today': is_today,
                 'is_running': is_running,
                 'is_upcoming': is_upcoming,
-                'activities_count': len(activities),
+                'activities_count': len(display_activities),
                 'is_individual': bool(instance and instance.status == 'active'),
+                'is_cancelled': is_cancelled,
                 'is_free': bool(training.is_hidden)
             })
 
