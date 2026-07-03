@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request
 
@@ -64,7 +64,7 @@ def _load_upcoming_trainings(team_codes=None):
         activities_by_training,
         instances_by_key,
         instance_activities_by_id,
-        datetime.now(timezone.utc),
+        datetime.now(),
     )
     return upcoming
 
