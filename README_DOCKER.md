@@ -78,17 +78,12 @@ docker-compose up -d --build
 
 ## Datenbank
 
-Die SQLite-Datenbank wird im `instance/` Verzeichnis gespeichert und ist persistent durch das Volume-Mapping.
+Die App ist für PostgreSQL ausgelegt. Im Tigers-Stack übernimmt `tt-postgres-agenda` die Persistenz, lokal kann die DB über die Compose-Datei mitgestartet werden.
 
-### Datenbank-Backup erstellen
+### Datenbank-Reset
 ```bash
-cp instance/trainings.db instance/trainings.db.backup
-```
-
-### Datenbank zurücksetzen
-```bash
-rm instance/trainings.db
-docker-compose restart
+docker-compose down -v
+docker-compose up -d
 ```
 
 ## Produktion
@@ -194,8 +189,7 @@ docker-compose up -d
 tar -czf tt-agenda-backup-$(date +%Y%m%d).tar.gz instance/
 
 # Backup wiederherstellen
-tar -xzf tt-agenda-backup-YYYYMMDD.tar.gz
-docker-compose restart
+Der zentrale Restore läuft über `tt-infra` und nicht über die Agenda-App direkt.
 ```
 
 ## Support

@@ -55,7 +55,7 @@ Hinweis: Fuer den produktionsnahen Betrieb und die aktuelle Stack-Orchestrierung
 
 - Python 3.12+
 - pip oder poetry
-- SQLite (standardmäßig enthalten)
+- PostgreSQL (über den Tigers-Stack oder eine eigene Instanz)
 
 ### Schritt 1: Repository klonen
 

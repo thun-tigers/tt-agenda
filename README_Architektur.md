@@ -11,8 +11,8 @@ Container(auth, "Auth", "Flask", "Login, Benutzerverwaltung und Service-Dashboar
 Container(agenda, "Agenda", "Flask", "Liefert und verwaltet Trainingseinheiten")  
 Container(analyse, "Analyse", "Flask", "Liefert LLM-Antworten")
 
-ContainerDb(agendadb, "Agenda Datenbank", "SQLite3", "Speichert Trainingsdaten")  
-ContainerDb(authdb, "Auth Datenbank", "SQLite3", "Speichert Benutzer und Rollen")  
+ContainerDb(agendadb, "Agenda Datenbank", "PostgreSQL", "Speichert Trainingsdaten")  
+ContainerDb(authdb, "Auth Datenbank", "PostgreSQL", "Speichert Benutzer und Rollen")  
 }
 
 System_Ext(llm, "AI Interface", "Externe Quelle für Analysen")

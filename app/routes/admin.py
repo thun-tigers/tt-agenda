@@ -1,9 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, send_file, after_this_request, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort
 from datetime import datetime, timedelta, date
 import json
-import os
-import sqlite3
-import tempfile
 from ..models import Training, Activity, TrainingInstance, ActivityInstance, ActivityType
 from ..extensions import db
 from ..utils import admin_required, WEEKDAYS, POSITION_GROUPS, get_active_team_code, get_activity_behavior, get_activity_color, recalculate_times, recalculate_instance_times
@@ -19,22 +16,9 @@ def get_database_backend():
 
 def get_database_backend_label(backend):
     labels = {
-        'sqlite': 'SQLite',
         'postgresql': 'PostgreSQL',
     }
     return labels.get(backend, backend.capitalize())
-
-
-def resolve_sqlite_db_path():
-    uri = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
-    if not uri.startswith('sqlite:'):
-        return None
-    if uri.startswith('sqlite:////'):
-        return os.path.abspath(uri.replace('sqlite:////', '/'))
-    if uri.startswith('sqlite:///'):
-        relative = uri.replace('sqlite:///', '')
-        return os.path.abspath(os.path.join(current_app.instance_path, relative))
-    return os.path.abspath(uri.replace('sqlite://', ''))
 
 def training_edit_url(training):
     endpoint = 'admin.edit_hidden_training' if training.is_hidden else 'admin.edit_training'
@@ -170,18 +154,11 @@ def admin_activity_types():
 @bp.route('/admin/backup', methods=['GET'])
 @admin_required
 def admin_backup():
-    """Backup & Restore Seite"""
-    db_backend = get_database_backend()
-    db_backend_label = get_database_backend_label(db_backend)
-    db_path = resolve_sqlite_db_path()
-    supports_file_backup = db_backend == 'sqlite'
-    db_exists = bool(db_path and os.path.exists(db_path))
+    """Hinweis auf das zentrale Backup im tt-infra-Service"""
+    db_backend_label = get_database_backend_label(get_database_backend())
     return render_template(
         'admin_backup_standalone.html',
-        db_backend=db_backend,
         db_backend_label=db_backend_label,
-        db_exists=db_exists,
-        supports_file_backup=supports_file_backup,
     )
 
 @bp.route('/admin/hidden-trainings/new', methods=['GET', 'POST'])
@@ -249,78 +226,13 @@ def delete_hidden_training(id):
 @bp.route('/admin/backup/download', methods=['GET'])
 @admin_required
 def admin_backup_download():
-    if get_database_backend() != 'sqlite':
-        flash('Direkter Datei-Download wird nur fuer SQLite unterstuetzt. Fuer Postgres bitte pg_dump oder einen Infrastruktur-Backup-Job verwenden.', 'warning')
-        return redirect(url_for('admin.admin_backup'))
-
-    db_path = resolve_sqlite_db_path()
-    if not db_path or not os.path.exists(db_path):
-        flash('Datenbank nicht gefunden.', 'danger')
-        return redirect(url_for('admin.admin_backup'))
-
-    db.session.commit()
-    db.session.close()
-    db.engine.dispose()
-
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    temp_file = tempfile.NamedTemporaryFile(prefix=f'backup_{timestamp}_', suffix='.db', delete=False)
-    temp_file.close()
-
-    with sqlite3.connect(db_path) as source_conn, sqlite3.connect(temp_file.name) as dest_conn:
-        source_conn.backup(dest_conn)
-
-    @after_this_request
-    def cleanup(response):
-        try:
-            os.remove(temp_file.name)
-        except OSError:
-            pass
-        return response
-
-    return send_file(temp_file.name, as_attachment=True, download_name=f'trainings_backup_{timestamp}.db')
+    flash('Der direkte Datenbank-Download ist entfernt. Bitte nutze das zentrale Backup im tt-infra-Service.', 'warning')
+    return redirect(url_for('admin.admin_backup'))
 
 @bp.route('/admin/backup/restore', methods=['POST'])
 @admin_required
 def admin_backup_restore():
-    if get_database_backend() != 'sqlite':
-        flash('Der In-App-Restore ist nur fuer SQLite verfuegbar. Fuer Postgres bitte ein Restore ueber pg_restore oder den Betriebsprozess ausfuehren.', 'warning')
-        return redirect(url_for('admin.admin_backup'))
-
-    db_path = resolve_sqlite_db_path()
-    if not db_path:
-        flash('Datenbank-Backend wird nicht unterstützt.', 'danger')
-        return redirect(url_for('admin.admin_backup'))
-
-    upload = request.files.get('backup_file')
-    if not upload or not upload.filename:
-        flash('Bitte eine Backup-Datei auswählen.', 'warning')
-        return redirect(url_for('admin.admin_backup'))
-
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
-    temp_file = tempfile.NamedTemporaryFile(prefix='restore_', suffix='.db', dir=os.path.dirname(db_path), delete=False)
-    temp_file.close()
-    upload.save(temp_file.name)
-
-    try:
-        with sqlite3.connect(temp_file.name) as conn:
-            result = conn.execute('PRAGMA integrity_check;').fetchone()
-            if not result or result[0].lower() != 'ok':
-                raise ValueError('Integrity check fehlgeschlagen')
-    except Exception:
-        os.remove(temp_file.name)
-        flash('Backup-Datei ist ungültig oder beschädigt.', 'danger')
-        return redirect(url_for('admin.admin_backup'))
-
-    if os.path.exists(db_path):
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_old = f"{db_path}.{timestamp}.bak"
-        os.replace(db_path, backup_old)
-
-    os.replace(temp_file.name, db_path)
-    db.session.close()
-    db.engine.dispose()
-
-    flash('Backup erfolgreich wiederhergestellt. Bitte Anwendung neu starten.', 'success')
+    flash('Der In-App-Restore ist entfernt. Bitte spiele Backups zentral im tt-infra-Service ein.', 'warning')
     return redirect(url_for('admin.admin_backup'))
 
 @bp.route('/training/new', methods=['GET', 'POST'])

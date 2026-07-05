@@ -10,7 +10,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = (
         os.environ.get('SQLALCHEMY_DATABASE_URI')
         or os.environ.get('DATABASE_URL')
-        or 'sqlite:///trainings.db'
+        or 'postgresql+psycopg://tt_agenda:tt_agenda_password@tt-postgres-agenda:5432/tt_agenda'
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -23,6 +23,7 @@ class Config:
     SSO_EXPECTED_AUDIENCE = os.environ.get('SSO_EXPECTED_AUDIENCE', 'tt-agenda')
     SSO_AUTO_PROVISION_USERS = os.environ.get('SSO_AUTO_PROVISION_USERS', 'true').lower() == 'true'
     SSO_SYNC_ROLE = os.environ.get('SSO_SYNC_ROLE', 'true').lower() == 'true'
+    TT_MEMBERS_INTERNAL_URL = os.environ.get('TT_MEMBERS_INTERNAL_URL', 'http://tt-members:5000')
     INTERNAL_API_SECRET = os.environ.get('INTERNAL_API_SECRET') or SSO_SHARED_SECRET
     TT_INFRA_INTERNAL_URL = os.environ.get('TT_INFRA_INTERNAL_URL', 'http://localhost:8084')
     # Rate limiting: override with redis://host:port/0 for multi-worker production

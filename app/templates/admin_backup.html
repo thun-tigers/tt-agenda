@@ -4,138 +4,79 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div class="flex items-center gap-3">
-            <div class="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white shadow-lg flex-shrink-0">
-                <i class="bi bi-database-down text-lg sm:text-xl"></i>
-            </div>
-            <div>
-                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Backup &amp; Restore</h1>
-                <p class="text-sm text-slate-600 dark:text-slate-400 hidden sm:block">Sichern und wiederherstellen Sie die Datenbank sicher. Aktives Backend: {{ db_backend_label }}.</p>
+    <div class="flex items-start justify-between gap-4">
+        <div class="space-y-1">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500/80 to-cyan-400/80 flex items-center justify-center text-white shadow-lg shadow-blue-900/30">
+                    <i class="bi bi-database-down text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-semibold text-slate-100">Backup &amp; Restore</h1>
+                    <p class="text-sm text-slate-400">{{ db_backend_label }} ist jetzt der einzige Datenbankpfad. Backups laufen zentral über tt-infra und enthalten alle Services plus Uploads.</p>
+                </div>
             </div>
         </div>
-        <a href="{{ url_for('admin.admin_trainings') }}" class="inline-flex items-center justify-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-600 bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 transition w-full sm:w-auto">
+        <a href="{{ url_for('main.index') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-200 hover:text-white px-3 py-2 rounded-lg border border-white/10 hover:border-white/20 bg-white/5 transition">
             <i class="bi bi-arrow-left"></i>
-            <span>Zur Verwaltung</span>
+            Zurück zur Übersicht
         </a>
     </div>
 
-    <!-- Main Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <!-- Backup erstellen -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6 shadow-md">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+    <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-2xl border border-white/5 bg-slate-900/60 backdrop-blur px-6 py-6 shadow-xl shadow-black/30">
+            <div class="flex items-center justify-between mb-3">
                 <div>
-                    <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Backup erstellen</p>
-                    <h2 class="text-lg font-bold text-slate-900 dark:text-white">Aktuelle Datenbank sichern</h2>
+                    <p class="text-sm text-slate-400">Zentrales Backup</p>
+                    <h2 class="text-lg font-semibold text-slate-100">tt-infra sichert den kompletten Stack</h2>
                 </div>
-                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 px-2.5 py-1 rounded-full self-start">
+                <span class="inline-flex items-center gap-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
                     <i class="bi bi-shield-check"></i>
-                    Empfohlen
+                    Standard
                 </span>
             </div>
-            {% if supports_file_backup %}
-            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Laedt eine SQLite-Datei der aktuellen Datenbank herunter.</p>
-            {% if db_exists %}
-            <a href="{{ url_for('admin.admin_backup_download') }}" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-400 hover:from-blue-600 hover:via-cyan-600 hover:to-emerald-500 shadow-md hover:shadow-lg transition">
-                <i class="bi bi-download"></i>
-                Backup herunterladen
-            </a>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-3 flex items-center gap-2">
-                <i class="bi bi-info-circle"></i>
-                Die Datei wird als SQLite-Datenbank gespeichert.
-            </p>
-            {% else %}
-            <div class="flex items-start gap-3 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/30 px-4 py-3 text-amber-800 dark:text-amber-200">
-                <i class="bi bi-exclamation-triangle-fill text-lg flex-shrink-0"></i>
-                <div>
-                    <p class="font-semibold">Keine Datenbank gefunden</p>
-                    <p class="text-sm">Bitte prüfen Sie die Instanz bevor Sie ein Backup erstellen.</p>
-                </div>
+            <p class="text-sm text-slate-300 mb-4">Der zentrale Backup-Job sammelt die Postgres-Datenbanken aller Services sowie die Upload-Verzeichnisse in einem Archiv.</p>
+            <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 space-y-2 text-sm text-slate-200">
+                <p class="font-semibold">Enthalten sind jetzt:</p>
+                <ul class="list-disc list-inside space-y-1 text-slate-300">
+                    <li>tt-auth, tt-members, tt-agenda, tt-attendance und tt-analytics über Postgres</li>
+                    <li>tt-members Uploads</li>
+                    <li>tt-analytics Uploads</li>
+                </ul>
             </div>
-            {% endif %}
-            {% else %}
-            <div class="flex items-start gap-3 rounded-lg border border-sky-300 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/30 px-4 py-3 text-sky-800 dark:text-sky-200">
-                <i class="bi bi-info-circle-fill text-lg flex-shrink-0"></i>
-                <div>
-                    <p class="font-semibold">Datei-Backups sind fuer {{ db_backend_label }} deaktiviert</p>
-                    <p class="text-sm">Fuer Postgres oder andere Server-Datenbanken bitte `pg_dump`, `pg_restore` oder einen Infrastruktur-Backup-Job verwenden.</p>
-                </div>
-            </div>
-            {% endif %}
         </div>
 
-        <!-- Backup wiederherstellen -->
-        <div class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6 shadow-md">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <div class="rounded-2xl border border-white/5 bg-slate-900/60 backdrop-blur px-6 py-6 shadow-xl shadow-black/30">
+            <div class="flex items-center justify-between mb-3">
                 <div>
-                    <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Backup wiederherstellen</p>
-                    <h2 class="text-lg font-bold text-slate-900 dark:text-white">Bestehendes Backup einspielen</h2>
+                    <p class="text-sm text-slate-400">Restore</p>
+                    <h2 class="text-lg font-semibold text-slate-100">Wiederherstellung läuft zentral</h2>
                 </div>
-                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 px-2.5 py-1 rounded-full self-start">
-                    <i class="bi bi-fire"></i>
-                    Kritisch
+                <span class="inline-flex items-center gap-2 text-xs text-amber-200 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Zentral
                 </span>
             </div>
-            {% if supports_file_backup %}
-            <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">Laedt eine Backup-Datei hoch und ersetzt die aktuelle Datenbank.</p>
-
-            <div class="flex items-start gap-3 rounded-lg border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/30 px-4 py-3 text-red-800 dark:text-red-200 mb-4">
-                <i class="bi bi-exclamation-octagon-fill text-lg flex-shrink-0"></i>
+            <p class="text-sm text-slate-300 mb-4">Direkte Datei-Restores in dieser App sind deaktiviert. Bitte spiele Backups im tt-infra-Service ein, damit alle betroffenen Services und Uploads konsistent zurückgesetzt werden.</p>
+            <div class="flex items-start gap-3 rounded-lg border border-sky-500/40 bg-sky-500/10 px-4 py-3 text-sky-50">
+                <i class="bi bi-info-circle-fill text-lg"></i>
                 <div>
-                    <p class="font-semibold text-sm">Achtung: Überschreibt alle aktuellen Daten.</p>
-                    <p class="text-xs sm:text-sm">Stellen Sie sicher, dass Sie vorher ein Backup erstellt haben.</p>
+                    <p class="font-semibold">Warum zentral?</p>
+                    <p class="text-sm text-sky-50/90">So bleibt der Stack über alle Microservices hinweg synchron und es gibt keinen separaten lokalen DB-Pfad mehr.</p>
                 </div>
             </div>
-            
-            <form method="POST" action="{{ url_for('admin.admin_backup_restore') }}" enctype="multipart/form-data" class="space-y-4">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="space-y-2">
-                    <label class="text-sm font-medium text-slate-700 dark:text-slate-200">Backup-Datei (.db, .sqlite)</label>
-                    <input type="file" name="backup_file" accept=".db,.sqlite,.sqlite3" required 
-                           class="block w-full text-sm text-slate-700 dark:text-slate-200 
-                                  file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 
-                                  file:text-sm file:font-semibold file:bg-indigo-100 dark:file:bg-indigo-900/50 
-                                  file:text-indigo-700 dark:file:text-indigo-300 
-                                  hover:file:bg-indigo-200 dark:hover:file:bg-indigo-800/50 
-                                  border border-slate-300 dark:border-slate-600 rounded-lg 
-                                  bg-white dark:bg-slate-700 
-                                  focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 
-                                  cursor-pointer" />
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Nur SQLite-Datenbanken werden unterstützt.</p>
-                </div>
-                <button type="submit" 
-                        class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 hover:from-red-600 hover:via-orange-600 hover:to-amber-500 shadow-md hover:shadow-lg transition" 
-                        onclick="return confirm('Wirklich alle Daten mit diesem Backup ersetzen? Diese Aktion kann nicht rückgängig gemacht werden!');">
-                    <i class="bi bi-upload"></i>
-                    <span class="hidden sm:inline">Backup hochladen &amp; wiederherstellen</span>
-                    <span class="sm:hidden">Wiederherstellen</span>
-                </button>
-            </form>
-            {% else %}
-            <div class="flex items-start gap-3 rounded-lg border border-sky-300 dark:border-sky-700 bg-sky-50 dark:bg-sky-900/30 px-4 py-3 text-sky-800 dark:text-sky-200">
-                <i class="bi bi-terminal-fill text-lg flex-shrink-0"></i>
-                <div>
-                    <p class="font-semibold">Restore nur ueber Betriebsprozess</p>
-                    <p class="text-sm">Fuer {{ db_backend_label }} sollte die Wiederherstellung ausserhalb der Anwendung mit `pg_restore` oder einem DB-Admin-Prozess erfolgen.</p>
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
 
-    <!-- Best Practices -->
-    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl sm:rounded-2xl border border-blue-200 dark:border-blue-800 p-4 sm:p-6 shadow-sm">
-        <div class="flex items-start gap-3">
-            <i class="bi bi-lightbulb text-xl text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5"></i>
-            <div class="space-y-2 sm:space-y-3">
+    <div class="rounded-2xl border border-white/5 bg-slate-900/60 backdrop-blur px-6 py-5 shadow-xl shadow-black/30">
+        <div class="flex items-start gap-3 text-slate-200">
+            <i class="bi bi-lightbulb text-xl text-amber-300"></i>
+            <div class="space-y-2">
                 <div>
-                    <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Empfehlungen</p>
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Best Practices für Backups</h3>
+                    <p class="text-sm text-slate-400">Empfehlungen</p>
+                    <h3 class="text-lg font-semibold">Backup-Workflow</h3>
                 </div>
-                <ul class="list-disc list-inside space-y-1 text-sm text-slate-700 dark:text-slate-300 ml-0 sm:ml-2">
-                    <li>Regelmäßig Backups erstellen und extern sichern.</li>
+                <ul class="list-disc list-inside space-y-1 text-sm text-slate-300">
+                    <li>Backups ausschliesslich über tt-infra erstellen und zurückspielen.</li>
                     <li>Wiederherstellung in einer Testumgebung prüfen.</li>
                     <li>Backup-Datum und -Zeitpunkt dokumentieren.</li>
                     <li>Nur vertrauenswürdige Backup-Dateien hochladen.</li>
