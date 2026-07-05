@@ -7,7 +7,7 @@ import os
 from typing import List, Tuple, Optional, Dict, Any
 import requests
 from .models import Activity, ActivityInstance, Training, TrainingInstance, ActivityType
-from .authz import is_platform_admin, is_service_admin, normalize_permissions
+from .authz import has_role_permission, is_platform_admin, is_service_admin, normalize_permissions
 from .extensions import db
 
 logger = logging.getLogger(__name__)
@@ -244,9 +244,19 @@ def get_active_team_name():
 
 def can_manage_agenda():
     permissions = get_user_permissions()
+    claims = session.get('claims_json') or {}
+    role_permissions = claims.get('role_permissions') or {}
     if is_platform_admin(session.get('platform_role'), permissions):
         return True
-    if is_service_admin(session.get('user_role'), permissions):
+    if is_service_admin(session.get('user_role'), permissions, role_permissions=role_permissions, service_name='agenda'):
+        return True
+    if (
+        has_role_permission(role_permissions, 'create', 'agenda')
+        or has_role_permission(role_permissions, 'write', 'agenda')
+        or has_role_permission(role_permissions, 'update', 'agenda')
+        or has_role_permission(role_permissions, 'delete', 'agenda')
+        or has_role_permission(role_permissions, 'approve', 'agenda')
+    ):
         return True
     if 'agenda:admin' in permissions or 'agenda:write' in permissions:
         return True
@@ -260,6 +270,10 @@ def can_view_agenda():
     if can_manage_agenda():
         return True
     permissions = get_user_permissions()
+    claims = session.get('claims_json') or {}
+    role_permissions = claims.get('role_permissions') or {}
+    if has_role_permission(role_permissions, 'read', 'agenda'):
+        return True
     if 'agenda:read' in permissions or 'profile:read' in permissions:
         return True
     return any(permission.startswith('team:') and permission.endswith(':read') for permission in permissions)

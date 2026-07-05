@@ -105,6 +105,7 @@ def sso_login():
     session['profile_complete'] = user.profile_complete
     session['memberships'] = user.memberships_json or []
     session['permissions'] = user.permissions_json or []
+    session['role_permissions'] = (user.claims_json or {}).get('role_permissions') or {}
     session['claims_json'] = user.claims_json or {}
 
     memberships = session.get('memberships') or []
