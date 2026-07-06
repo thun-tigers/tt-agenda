@@ -54,6 +54,11 @@ def create_app(config_class=Config):
     
     app.config.from_object(config_class)
 
+    # Flask session config
+    app.config.setdefault('SESSION_COOKIE_SECURE', True)
+    app.config.setdefault('SESSION_COOKIE_HTTPONLY', True)
+    app.config.setdefault('SESSION_COOKIE_SAMESITE', 'Lax')
+
     if not app.config.get('SECRET_KEY'):
         if app.debug or app.testing:
             app.logger.warning('SECRET_KEY is not set; running in insecure development mode.')
