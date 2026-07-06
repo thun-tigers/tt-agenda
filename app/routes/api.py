@@ -30,6 +30,7 @@ def _load_upcoming_trainings(team_codes=None):
     trainings_query = Training.query
     if team_codes:
         trainings_query = trainings_query.filter(Training.team_code.in_(team_codes))
+    trainings_query = trainings_query.order_by(Training.start_date.asc(), Training.weekday.asc(), Training.start_time.asc(), Training.id.asc())
 
     trainings = trainings_query.all()
     training_ids = [training.id for training in trainings]
@@ -59,12 +60,17 @@ def _load_upcoming_trainings(team_codes=None):
             ):
                 instance_activities_by_id.setdefault(activity.training_instance_id, []).append(activity)
 
+    limit = request.args.get('limit', type=int)
+    if limit is not None and limit <= 0:
+        limit = None
+
     upcoming = get_upcoming_trainings(
         trainings,
         activities_by_training,
         instances_by_key,
         instance_activities_by_id,
         datetime.now(),
+        limit=limit,
     )
     return upcoming
 

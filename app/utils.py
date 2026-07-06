@@ -467,7 +467,7 @@ def get_current_training_status(trainings: List[Training], activities_by_trainin
 
     return current_training, current_activity, next_activity, training_status, current_date, current_activities, current_start_dt
 
-def get_upcoming_trainings(trainings: List[Training], activities_by_training: Dict[int, List[Activity]], instances_by_key: Dict[tuple, TrainingInstance], instance_activities_by_id: Dict[int, List[ActivityInstance]], now: datetime):
+def get_upcoming_trainings(trainings: List[Training], activities_by_training: Dict[int, List[Activity]], instances_by_key: Dict[tuple, TrainingInstance], instance_activities_by_id: Dict[int, List[ActivityInstance]], now: datetime, limit: int | None = None):
     """Baut die Liste aller kommenden Trainings für die Übersicht."""
     today = now.date()
     upcoming_trainings = []
@@ -508,8 +508,12 @@ def get_upcoming_trainings(trainings: List[Training], activities_by_training: Di
                 'is_cancelled': is_cancelled,
                 'is_free': bool(training.is_hidden)
             })
+            if limit and len(upcoming_trainings) >= limit:
+                return upcoming_trainings
 
     upcoming_trainings.sort(key=lambda x: (x['date'], x['start_time']))
+    if limit:
+        return upcoming_trainings[:limit]
     return upcoming_trainings
 
 def get_text_color_for_bg(bg_color):

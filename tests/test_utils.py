@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timedelta
-from app.utils import build_activity_timeline, get_text_color_for_bg, build_group_cells
+from app.utils import build_activity_timeline, get_text_color_for_bg, build_group_cells, get_upcoming_trainings
 from app.models import Activity
 
 def test_build_activity_timeline():
@@ -188,3 +188,23 @@ def test_build_group_cells_individual():
     # OL cell should have content
     ol_cell = next(c for c in cells if c['groups'] == ['OL'])
     assert ol_cell['content'] == 'OL topic'
+
+
+def test_get_upcoming_trainings_respects_limit(monkeypatch):
+    class FakeTraining:
+        def __init__(self, training_id):
+            self.id = training_id
+            self.is_hidden = False
+            self.start_date = datetime(2026, 7, 8).date()
+            self.weekday = 2
+
+    fake_trainings = [FakeTraining(1), FakeTraining(2)]
+    activities_by_training = {1: [], 2: []}
+
+    monkeypatch.setattr('app.utils.get_next_training_dates', lambda training, activities=None, limit=None, now=None: [datetime(2026, 7, 8).date()])
+    monkeypatch.setattr('app.utils.resolve_activities_for_date', lambda training, date, activities_by_training, instances_by_key, instance_activities_by_id: ([object()], False))
+    monkeypatch.setattr('app.utils.get_timeline_from_activities', lambda activities, date: ([(object(), datetime(2026, 7, 8, 19, 30))], datetime(2026, 7, 8, 19, 30), datetime(2026, 7, 8, 21, 0)))
+
+    result = get_upcoming_trainings(fake_trainings, activities_by_training, {}, {}, datetime(2026, 7, 1, 12, 0), limit=1)
+    assert len(result) == 1
+    assert result[0]['training'].id == 1
