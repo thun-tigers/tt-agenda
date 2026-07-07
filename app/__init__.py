@@ -79,6 +79,27 @@ def create_app(config_class=Config):
     app.register_blueprint(admin.bp)
     app.register_blueprint(api.bp)
 
+    # Zentrales UI-Layout aus tt-common
+    from tt_common import register_shared_ui
+    register_shared_ui(
+        app,
+        brand_label='Agenda',
+        brand_icon='bi-calendar-week-fill',
+        home_endpoint='main.index',
+        logout_endpoint='auth.logout',
+    )
+
+    @app.context_processor
+    def inject_current_user():
+        # Das geteilte Layout gated auf current_user; agenda arbeitet
+        # sessionbasiert, daher hier aus der Session ableiten.
+        if session.get('user_id'):
+            return {'current_user': {
+                'username': session.get('username'),
+                'role': session.get('user_role', 'user'),
+            }}
+        return {'current_user': None}
+
     # Context processors and filters
     @app.context_processor
     def inject_colors():

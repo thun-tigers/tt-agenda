@@ -1,34 +1,19 @@
+import logging
 import secrets
-from urllib.parse import urlencode, urljoin, urlparse
 
 import jwt
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
-from ..authz import normalize_auth_payload
-from ..models import User
-from ..extensions import limiter, db
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import generate_password_hash
-import logging
+
+from tt_common.sso import get_auth_login_url, get_auth_logout_url, is_safe_url
+
+from ..authz import normalize_auth_payload
+from ..extensions import db, limiter
+from ..models import User
+from ..sso_replay import is_replayed_sso_token
 
 bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
-
-def is_safe_url(target):
-    ref_url = urlparse(request.host_url)
-    test_url = urlparse(urljoin(request.host_url, target))
-    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
-
-
-def get_auth_login_url(next_page=None):
-    auth_base_url = current_app.config.get('AUTH_BASE_URL', 'http://localhost:8085').rstrip('/')
-    query = {'next_service': 'tt-agenda'}
-    if next_page:
-        query['next'] = next_page
-    return f"{auth_base_url}/?{urlencode(query)}"
-
-
-def get_auth_logout_url():
-    auth_base_url = current_app.config.get('AUTH_BASE_URL', 'http://localhost:8085').rstrip('/')
-    return f"{auth_base_url}/logout"
 
 
 @bp.route('/login', methods=['GET', 'POST'])
@@ -37,12 +22,12 @@ def login():
     next_page = request.args.get('next')
     if next_page and not is_safe_url(next_page):
         next_page = None
-    auth_login_url = get_auth_login_url(next_page)
+    auth_login_url = get_auth_login_url('tt-agenda', next_page)
     if request.method == 'POST':
         flash('Die Anmeldung erfolgt zentral über tt-auth.', 'info')
         return redirect(auth_login_url)
-
     return render_template('login.html', auth_login_url=auth_login_url, next_page=next_page)
+
 
 @bp.route('/logout', methods=['POST'])
 def logout():
@@ -70,6 +55,10 @@ def sso_login():
         return redirect(url_for('auth.login'))
     except jwt.InvalidTokenError:
         flash('Ungültiger SSO-Token.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    if is_replayed_sso_token(payload):
+        flash('SSO-Token wurde bereits verwendet. Bitte erneut anmelden.', 'danger')
         return redirect(url_for('auth.login'))
 
     auth = normalize_auth_payload(payload)

@@ -1,74 +1,16 @@
-<!DOCTYPE html>
-<html lang="de" class="scroll-smooth">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>{% block title %}Agenda – Tigers{% endblock %}</title>
-<meta name="theme-color" content="#4f46e5">
+{% extends "tt_common/base.html" %}
+{% block title %}Agenda – Tigers{% endblock %}
+{% block brand_link %}{{ auth_dashboard_url }}{% endblock %}
+{% block brand_loggedout %}Agenda{% endblock %}
 
-<!-- PWA -->
-<meta name="application-name" content="TT-Agenda">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="TT-Agenda">
-<meta name="mobile-web-app-capable" content="yes">
-<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-<link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
-<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    darkMode: 'class',
-    theme: {
-      extend: {
-        colors: {
-          brand: {
-            50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',
-            500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81',950:'#1e1b4b'
-          }
-        },
-        fontFamily: { sans: ['Inter','sans-serif'] }
-      }
-    }
-  }
-</script>
-<script>
-  (function() {
-    function readCookie(name) {
-      const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-      return match ? decodeURIComponent(match[1]) : null;
-    }
-    const stored = readCookie('tt_theme_global') || readCookie('tt_theme') || localStorage.getItem('theme') || 'system';
-    const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    const effective = stored === 'system' ? system : stored;
-    if (effective === 'dark') document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-  })();
-</script>
+{# htmx + Bridge fuer Kind-Templates (extra_head) #}
+{% block head_extra %}
 <script src="https://unpkg.com/htmx.org@1.9.13"></script>
+{% block extra_head %}{% endblock %}
+{% endblock %}
 
-<style>
-  * { font-family: 'Inter', sans-serif; }
-  form :is(input[type='text'], input[type='email'], input[type='password'], input[type='search'], input[type='date'], input[type='time'], input[type='number'], select, textarea) {
-    padding-top: 0.55rem !important;
-    padding-bottom: 0.55rem !important;
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
-    font-size: 0.875rem !important;
-    line-height: 1.25rem !important;
-    border-radius: 0.75rem !important;
-  }
-  form label { font-size: 0.75rem; line-height: 1rem; margin-bottom: 0.25rem; }
-  html { scroll-behavior: smooth; }
-  .glass { backdrop-filter: saturate(180%) blur(16px); }
-  .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
-  .dark, .dark html { color-scheme: dark; }
-  /* Aktivitätsfarben */
+{# Aktivitaetsfarben + slideIn-Animation #}
+{% block head_style %}
   :root {
     {% for key in ACTIVITY_TYPE_ORDER %}
     --color-{{ key }}: {{ LIGHT_MODE_COLORS.get(key, '#E8E8E8') }};
@@ -84,177 +26,122 @@
   @media (prefers-reduced-motion: no-preference) {
     * { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
   }
-</style>
-{% block extra_head %}{% endblock %}
-</head>
-<body class="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-50 antialiased">
+{% endblock %}
 
-{% if session.get('user_id') %}
-<!-- ===== App Bar (eingeloggt) ===== -->
-<header class="sticky top-0 z-40 border-b border-slate-200/80 dark:border-slate-800 bg-white/85 dark:bg-slate-900/85 glass">
-  <div class="flex items-center gap-3 px-4 h-14 max-w-7xl mx-auto">
-    <a href="{{ auth_dashboard_url }}" class="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-white ring-1 ring-slate-200 dark:ring-slate-500 shadow-sm">
-      <img src="{{ url_for('static', filename='tt-logo.png') }}" alt="TT" class="w-full h-full object-contain p-0.5">
-    </a>
-    <div class="min-w-0">
-      <div class="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-indigo-500 dark:text-indigo-300 leading-none">Thun Tigers</div>
-      <div class="flex items-center gap-1.5">
-        <i class="bi bi-calendar-week-fill text-sm text-indigo-600 dark:text-indigo-400"></i>
-        <span class="text-sm font-bold leading-tight truncate">Agenda</span>
-      </div>
-    </div>
+{# Desktop-Navigation #}
+{% block nav_desktop %}
+<div class="hidden lg:flex items-center gap-1 ml-auto mr-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/50 p-1">
+  {% set ep = request.endpoint %}
+  <a href="{{ url_for('main.index') }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition
+    {{ 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900' if ep == 'main.index' else 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900' }}">
+    <i class="bi bi-house-door-fill"></i>Übersicht
+  </a>
+  <a href="{{ url_for('main.live') }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition
+    {{ 'bg-red-500 text-white shadow-sm' if training_status == 'running' else ('bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900' if ep == 'main.live' else 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900') }}">
+    <i class="bi bi-broadcast"></i>Live
+    {% if training_status == 'running' %}<span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>{% endif %}
+  </a>
+  {% if can_manage_agenda() %}
+  <a href="{{ url_for('admin.admin_trainings') }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition
+    {{ 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900' if ep in ['admin.admin_trainings','admin.admin_activity_types','admin.admin_backup'] else 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900' }}">
+    <i class="bi bi-gear-fill"></i>Admin
+  </a>
+  {% endif %}
+</div>
+{% endblock %}
 
-    <!-- Desktop Nav -->
-    <div class="hidden lg:flex items-center gap-1 ml-auto mr-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/50 p-1">
-      {% set ep = request.endpoint %}
-      <a href="{{ url_for('main.index') }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition
-        {{ 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900' if ep == 'main.index' else 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900' }}">
-        <i class="bi bi-house-door-fill"></i>Übersicht
-      </a>
-      <a href="{{ url_for('main.live') }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition
-        {{ 'bg-red-500 text-white shadow-sm' if training_status == 'running' else ('bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900' if ep == 'main.live' else 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900') }}">
-        <i class="bi bi-broadcast"></i>Live
-        {% if training_status == 'running' %}<span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>{% endif %}
-      </a>
-      {% if can_manage_agenda() %}
-      <a href="{{ url_for('admin.admin_trainings') }}" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition
-        {{ 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-900' if ep in ['admin.admin_trainings','admin.admin_activity_types','admin.admin_backup'] else 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900' }}">
-        <i class="bi bi-gear-fill"></i>Admin
-      </a>
-      {% endif %}
-    </div>
-
-    <div class="ml-auto lg:ml-0 flex items-center gap-1.5">
-      {% if available_teams|length > 1 %}
-      <form method="POST" action="{{ url_for('auth.switch_team') }}" class="hidden md:block">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="next" value="{{ request.full_path }}">
-        <select name="team_code" onchange="this.form.submit()" class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-2 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          {% for team in available_teams %}
-          <option value="{{ team.code }}" {{ 'selected' if team.code == active_team_code else '' }}>{{ team.name }}</option>
-          {% endfor %}
-        </select>
-      </form>
-      {% else %}
-      <span class="hidden md:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-2 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-300">
-        <i class="bi bi-people"></i>{{ active_team_name }}
-      </span>
-      {% endif %}
-
-      <a href="{{ auth_dashboard_url }}" class="relative hidden lg:inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Apps">
-        <i class="bi bi-grid-fill"></i>
-        {% if pending_messages_count > 0 %}
-        <span class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold">{{ pending_messages_count if pending_messages_count < 100 else '99+' }}</span>
-        {% endif %}
-      </a>
-
-      <button id="themeToggle" class="h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Design">
-        <i class="bi bi-moon-fill" id="themeIcon"></i>
-      </button>
-
-      <button id="pwaInstallBtn" class="hidden h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 transition" title="App installieren">
-        <i class="bi bi-download"></i>
-      </button>
-
-      <button id="mobileMenuBtn" class="lg:hidden h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" aria-label="Menü">
-        <i class="bi bi-list text-lg" id="mobileMenuIcon"></i>
-      </button>
-
-      <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-600">
-        <a href="{{ auth_dashboard_url }}profile" class="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-          <div class="hidden sm:block text-right">
-            <div class="text-xs font-semibold leading-tight">{{ session.get('username') }}</div>
-            <div class="text-[10px] text-indigo-500 dark:text-indigo-400 leading-tight">{% if can_manage_agenda() %}Admin{% else %}Mitglied{% endif %}</div>
-          </div>
-          <div class="h-8 w-8 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold text-xs">{{ session.get('username', '?')[0].upper() }}</div>
-        </a>
-        <form method="POST" action="{{ url_for('auth.logout') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition" title="Abmelden">
-            <i class="bi bi-box-arrow-right"></i>
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Mobile Menu -->
-  <div id="mobileMenu" class="lg:hidden hidden border-t border-slate-200 dark:border-slate-800">
-    <div class="px-4 py-3 space-y-1">
-      {% set ep = request.endpoint %}
-      <a href="{{ url_for('main.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'main.index' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-        <i class="bi bi-house-door-fill"></i>Übersicht
-      </a>
-      <a href="{{ url_for('main.live') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'main.live' or training_status == 'running' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-        <i class="bi bi-broadcast"></i>Live
-        {% if training_status == 'running' %}<span class="w-2 h-2 bg-red-500 rounded-full animate-pulse ml-auto"></span>{% endif %}
-      </a>
-      {% if can_manage_agenda() %}
-      <a href="{{ url_for('admin.admin_trainings') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep in ['admin.admin_trainings','admin.admin_activity_types','admin.admin_backup'] else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-        <i class="bi bi-calendar-check-fill"></i>Trainings
-      </a>
-      <a href="{{ url_for('admin.admin_activity_types') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'admin.admin_activity_types' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-        <i class="bi bi-tags-fill"></i>Aktivitätstypen
-      </a>
-      <a href="{{ url_for('admin.admin_backup') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'admin.admin_backup' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
-        <i class="bi bi-database-down"></i>Backup
-      </a>
-      {% endif %}
-      <hr class="border-slate-200 dark:border-slate-700">
-      {% if available_teams|length > 1 %}
-      <form method="POST" action="{{ url_for('auth.switch_team') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="next" value="{{ request.full_path }}">
-        <label class="sr-only" for="tm">Mannschaft</label>
-        <select id="tm" name="team_code" onchange="this.form.submit()" class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm">
-          {% for team in available_teams %}
-          <option value="{{ team.code }}" {{ 'selected' if team.code == active_team_code else '' }}>{{ team.name }}</option>
-          {% endfor %}
-        </select>
-      </form>
-      {% else %}
-      <span class="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300">
-        <i class="bi bi-people"></i>{{ active_team_name }}
-      </span>
-      {% endif %}
-      <a href="{{ auth_dashboard_url }}" class="relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">
-        <i class="bi bi-grid-fill"></i>Apps
-        {% if pending_messages_count > 0 %}
-        <span class="ml-auto min-w-[18px] h-[18px] px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">{{ pending_messages_count if pending_messages_count < 100 else '99+' }}</span>
-        {% endif %}
-      </a>
-      <div id="pwaInstallMobileContainer" class="hidden">
-        <button id="pwaInstallBtnMobile" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30">
-          <i class="bi bi-download"></i>App installieren
-        </button>
-      </div>
-    </div>
-  </div>
-</header>
+{# Team-Switcher + Apps + PWA-Install (Desktop-Actions) #}
+{% block appbar_actions %}
+{% if available_teams|length > 1 %}
+<form method="POST" action="{{ url_for('auth.switch_team') }}" class="hidden md:block">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="next" value="{{ request.full_path }}">
+  <select name="team_code" onchange="this.form.submit()" class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-2 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    {% for team in available_teams %}
+    <option value="{{ team.code }}" {{ 'selected' if team.code == active_team_code else '' }}>{{ team.name }}</option>
+    {% endfor %}
+  </select>
+</form>
 {% else %}
-<!-- ===== Minimal App Bar (ausgeloggt) ===== -->
-<header class="sticky top-0 z-40 border-b border-slate-200/80 dark:border-slate-800 bg-white/85 dark:bg-slate-900/85 glass">
-  <div class="flex items-center gap-3 px-4 h-14 max-w-7xl mx-auto">
-    <a href="{{ auth_dashboard_url }}" class="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-white ring-1 ring-slate-200 dark:ring-slate-500 shadow-sm">
-      <img src="{{ url_for('static', filename='tt-logo.png') }}" alt="TT" class="w-full h-full object-contain p-0.5">
-    </a>
-    <div class="min-w-0">
-      <div class="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-indigo-500 dark:text-indigo-300 leading-none">Thun Tigers</div>
-      <div class="text-sm font-bold leading-tight">Agenda</div>
-    </div>
-    <div class="ml-auto flex items-center gap-2">
-      <button id="themeToggle" class="h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Design">
-        <i class="bi bi-moon-fill" id="themeIcon"></i>
-      </button>
-      <a href="{{ url_for('auth.login') }}" class="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 rounded-lg transition shadow-sm">
-        <i class="bi bi-box-arrow-in-right mr-1"></i>Anmelden
-      </a>
-    </div>
-  </div>
-</header>
+<span class="hidden md:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 px-2 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-300">
+  <i class="bi bi-people"></i>{{ active_team_name }}
+</span>
 {% endif %}
+<a href="{{ auth_dashboard_url }}" class="relative hidden lg:inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Apps">
+  <i class="bi bi-grid-fill"></i>
+  {% if pending_messages_count > 0 %}
+  <span class="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold">{{ pending_messages_count if pending_messages_count < 100 else '99+' }}</span>
+  {% endif %}
+</a>
+{% endblock %}
 
-<!-- Flash Messages -->
+{# User-Menue mit POST-Logout (csrf) #}
+{% block user_menu %}
+<div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-600">
+  <a href="{{ auth_dashboard_url }}profile" class="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+    <div class="hidden sm:block text-right">
+      <div class="text-xs font-semibold leading-tight">{{ session.get('username') }}</div>
+      <div class="text-[10px] text-indigo-500 dark:text-indigo-400 leading-tight">{% if can_manage_agenda() %}Admin{% else %}Mitglied{% endif %}</div>
+    </div>
+    <div class="h-8 w-8 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-bold text-xs">{{ session.get('username', '?')[0].upper() }}</div>
+  </a>
+  <form method="POST" action="{{ url_for('auth.logout') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="h-8 w-8 grid place-items-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition" title="Abmelden">
+      <i class="bi bi-box-arrow-right"></i>
+    </button>
+  </form>
+</div>
+{% endblock %}
+
+{# Mobile-Navigation #}
+{% block nav_mobile %}
+{% set ep = request.endpoint %}
+<a href="{{ url_for('main.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'main.index' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+  <i class="bi bi-house-door-fill"></i>Übersicht
+</a>
+<a href="{{ url_for('main.live') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'main.live' or training_status == 'running' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+  <i class="bi bi-broadcast"></i>Live
+  {% if training_status == 'running' %}<span class="w-2 h-2 bg-red-500 rounded-full animate-pulse ml-auto"></span>{% endif %}
+</a>
+{% if can_manage_agenda() %}
+<a href="{{ url_for('admin.admin_trainings') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep in ['admin.admin_trainings','admin.admin_activity_types','admin.admin_backup'] else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+  <i class="bi bi-calendar-check-fill"></i>Trainings
+</a>
+<a href="{{ url_for('admin.admin_activity_types') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'admin.admin_activity_types' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+  <i class="bi bi-tags-fill"></i>Aktivitätstypen
+</a>
+<a href="{{ url_for('admin.admin_backup') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition {{ 'bg-indigo-600 text-white' if ep == 'admin.admin_backup' else 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700' }}">
+  <i class="bi bi-database-down"></i>Backup
+</a>
+{% endif %}
+<hr class="border-slate-200 dark:border-slate-700">
+{% if available_teams|length > 1 %}
+<form method="POST" action="{{ url_for('auth.switch_team') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="next" value="{{ request.full_path }}">
+  <label class="sr-only" for="tm">Mannschaft</label>
+  <select id="tm" name="team_code" onchange="this.form.submit()" class="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm">
+    {% for team in available_teams %}
+    <option value="{{ team.code }}" {{ 'selected' if team.code == active_team_code else '' }}>{{ team.name }}</option>
+    {% endfor %}
+  </select>
+</form>
+{% else %}
+<span class="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300">
+  <i class="bi bi-people"></i>{{ active_team_name }}
+</span>
+{% endif %}
+<a href="{{ auth_dashboard_url }}" class="relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">
+  <i class="bi bi-grid-fill"></i>Apps
+  {% if pending_messages_count > 0 %}
+  <span class="ml-auto min-w-[18px] h-[18px] px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">{{ pending_messages_count if pending_messages_count < 100 else '99+' }}</span>
+  {% endif %}
+</a>
+{% endblock %}
+
+{# Reichere Flash-Messages (Close-Button, Auto-Hide, 4 Kategorien) #}
+{% block flash_messages %}
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 <div id="messagesContainer" class="max-w-7xl mx-auto px-4 pt-4 space-y-1.5">
@@ -272,16 +159,10 @@
 </div>
 {% endif %}
 {% endwith %}
+{% endblock %}
 
-<!-- Main Content -->
-<main class="min-h-screen">
-  <div class="max-w-7xl mx-auto px-4 py-6">
-    {% block content %}{% endblock %}
-  </div>
-</main>
-
-{% if session.get('user_id') %}
-<!-- Bottom Tab Bar (mobile only) -->
+{# Bottom-Tab-Bar (mobil) #}
+{% block bottom_nav %}
 {% set active_tab = active_tab|default('home') %}
 <nav class="sticky bottom-0 z-40 lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 glass safe-bottom">
   <div class="grid grid-cols-4 max-w-lg mx-auto">
@@ -300,91 +181,31 @@
     {% endfor %}
   </div>
 </nav>
-{% endif %}
+{% endblock %}
 
-<!-- Footer -->
+{# Footer #}
+{% block footer %}
 <footer class="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 py-6">
   <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <p>&copy; 2026 <strong>Thun Tigers</strong> – Trainingsverwaltung</p>
   </div>
 </footer>
+{% endblock %}
 
-<!-- Scripts -->
+{# Agenda-spezifische Scripts + Bridge fuer Kind-Templates (scripts) #}
+{% block extra_js %}
 <script>
-  const toggle = document.getElementById('themeToggle');
-  const icon = document.getElementById('themeIcon');
-  const html = document.documentElement;
+  // Mobile-Menue: bei Link-Klick schliessen
+  (function() {
+    const mMenu = document.getElementById('mobileNav');
+    if (mMenu) mMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => mMenu.classList.add('hidden')));
+  })();
 
-  function readCookie(name) {
-    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-    return match ? decodeURIComponent(match[1]) : null;
-  }
-  function resolveTheme(p) { return p === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : p; }
-  function applyTheme(p) {
-    const e = resolveTheme(p);
-    e === 'dark' ? html.classList.add('dark') : html.classList.remove('dark');
-    if (p === 'system') { icon.className = 'bi bi-circle-half'; toggle.title = 'System'; }
-    else if (p === 'dark') { icon.className = 'bi bi-sun-fill'; toggle.title = 'Hell'; }
-    else { icon.className = 'bi bi-moon-fill'; toggle.title = 'Dunkel'; }
-  }
-  function saveTheme(p) {
-    localStorage.setItem('theme', p);
-    const host = window.location.hostname || '';
-    let d = '';
-    if (host && host !== 'localhost' && !/^\d+\.\d+\.\d+\.\d+$/.test(host)) { const parts = host.split('.'); if (parts.length >= 2) d = '; domain=.' + parts.slice(-2).join('.'); }
-    const s = '; path=/; max-age=31536000; samesite=lax' + d;
-    document.cookie = 'tt_theme=' + encodeURIComponent(p) + s;
-    document.cookie = 'tt_theme_global=' + encodeURIComponent(p) + s;
-    applyTheme(p);
-  }
-  let ct = readCookie('tt_theme_global') || readCookie('tt_theme') || localStorage.getItem('theme') || 'system';
-  if (!['light','dark','system'].includes(ct)) ct = 'system';
-  applyTheme(ct);
-  if (toggle) toggle.addEventListener('click', () => { const o = ['system','light','dark']; const i = o.indexOf(ct); ct = o[(i+1)%o.length]; saveTheme(ct); });
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (ct === 'system') applyTheme('system'); });
-
-  // Mobile menu
-  const mBtn = document.getElementById('mobileMenuBtn');
-  const mMenu = document.getElementById('mobileMenu');
-  const mIcon = document.getElementById('mobileMenuIcon');
-  if (mBtn && mMenu) {
-    mBtn.addEventListener('click', () => {
-      const h = mMenu.classList.toggle('hidden');
-      mIcon.classList.toggle('bi-list', h);
-      mIcon.classList.toggle('bi-x-lg', !h);
-      mBtn.setAttribute('aria-label', h ? 'Menü öffnen' : 'Menü schließen');
-    });
-    mMenu.querySelectorAll('a').forEach(l => l.addEventListener('click', () => { mMenu.classList.add('hidden'); mIcon.classList.remove('bi-x-lg'); mIcon.classList.add('bi-list'); }));
-  }
-
-  // Auto-hide flash messages
+  // Flash-Messages automatisch ausblenden
   document.querySelectorAll('.flash-message').forEach(msg => {
     setTimeout(() => { msg.style.opacity = '0'; msg.style.transition = 'opacity 0.3s ease-out'; setTimeout(() => msg.remove(), 300); }, 5000);
   });
 
-  // PWA Service Worker & Install
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => { navigator.serviceWorker.register('/static/service-worker.js').catch(()=>{}); });
-  }
-  let deferredPrompt;
-  const pwaBtn = document.getElementById('pwaInstallBtn');
-  const pwaBtnM = document.getElementById('pwaInstallBtnMobile');
-  const pwaCont = document.getElementById('pwaInstallMobileContainer');
-  function showInstall() { if (pwaBtn) pwaBtn.classList.remove('hidden'); if (pwaCont) pwaCont.classList.remove('hidden'); }
-  function hideInstall() { if (pwaBtn) pwaBtn.classList.add('hidden'); if (pwaCont) pwaCont.classList.add('hidden'); }
-  async function triggerInstall() {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    hideInstall();
-  }
-  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; showInstall(); });
-  window.addEventListener('appinstalled', () => { deferredPrompt = null; hideInstall(); });
-  if (pwaBtn) pwaBtn.addEventListener('click', triggerInstall);
-  if (pwaBtnM) pwaBtnM.addEventListener('click', triggerInstall);
 </script>
-
 {% block scripts %}{% endblock %}
-</body>
-</html>
+{% endblock %}
