@@ -1,4 +1,5 @@
 from flask import Flask, abort, request, session
+from werkzeug.middleware.proxy_fix import ProxyFix
 from .config import Config
 from .extensions import db, migrate, limiter
 from .utils import (
@@ -319,6 +320,7 @@ def create_app(config_class=Config):
                 db.session.commit()
             ensure_activity_types()
             refresh_position_groups()
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
     return app
 
 
