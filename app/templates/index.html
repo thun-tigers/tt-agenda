@@ -1,8 +1,16 @@
 {% extends "base.html" %}
+{% from "tt_common/macros.html" import status_card %}
 
 {% set active_tab = 'home' %}
 
 {% block content %}
+{% if not current_training %}
+<div class="tt-page-hero mb-6">
+    <p class="tt-eyebrow">Heute im Team</p>
+    <h1 class="mt-1 text-2xl font-bold tracking-tight">Trainingsübersicht</h1>
+    <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Plane voraus oder öffne direkt das nächste Training.</p>
+</div>
+{% endif %}
 <!-- Aktuelles Training Hero Card -->
 {% if current_training %}
 <div class="mb-8">
@@ -31,7 +39,7 @@
         </div>
     </div>
     {% else %}
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-700 dark:to-blue-700 shadow-lg">
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 ring-1 ring-indigo-400/20 dark:ring-indigo-400/15 shadow-lg shadow-indigo-950/20">
         <div class="absolute inset-0 opacity-10">
             <div class="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
         </div>
@@ -62,11 +70,10 @@
         <h3 class="text-2xl font-bold text-slate-900 dark:text-white">Nächste Trainings</h3>
     </div>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="tt-status-timeline grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
         {% for item in upcoming_trainings %}
-        <div class="group">
-            <a href="{{ url_for('main.live', training_id=item.training.id, date=item.date.strftime('%Y-%m-%d')) }}" class="block h-full">
-                <div class="h-full bg-white dark:bg-slate-800 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-2 transition p-4 sm:p-6 border-l-4 {% if item.is_running %}border-red-500{% elif item.is_individual %}border-yellow-500{% elif item.is_free %}border-purple-500{% else %}border-indigo-500{% endif %}">
+        {% set card_variant = 'danger' if item.is_running else ('warning' if item.is_individual else ('success' if item.is_free else 'info')) %}
+        {% call status_card(card_variant, url_for('main.live', training_id=item.training.id, date=item.date.strftime('%Y-%m-%d')), extra_classes='group p-4 sm:p-6') %}
                     <!-- Status Badge -->
                     <div class="mb-4 flex gap-2 flex-wrap">
                         {% if item.is_running %}
@@ -121,9 +128,7 @@
                             <span>{{ item.activities_count }} Aktivitäten</span>
                         </div>
                     </div>
-                </div>
-            </a>
-        </div>
+        {% endcall %}
         {% endfor %}
     </div>
 </div>
