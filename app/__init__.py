@@ -139,7 +139,7 @@ def create_app(config_class=Config):
 
     @app.context_processor
     def inject_platform_links():
-        auth_base_url = app.config.get('AUTH_BASE_URL', 'http://localhost:8085').rstrip('/')
+        auth_base_url = (app.config.get('AUTH_BASE_URL') or 'http://localhost:8085').rstrip('/')
         teams = get_available_teams()
         active_team_code = get_active_team_code()
         return {
@@ -328,7 +328,7 @@ def _fetch_pending_messages_count(app, auth_user_id):
     if not auth_user_id:
         return 0
 
-    members_base = app.config.get('TT_MEMBERS_INTERNAL_URL', 'http://tt-members:5000').rstrip('/')
+    members_base = (app.config.get('TT_MEMBERS_INTERNAL_URL') or 'http://tt-members:5000').rstrip('/')
     secret = app.config.get('INTERNAL_API_SECRET') or app.config.get('SSO_SHARED_SECRET') or app.config.get('SECRET_KEY')
     if not secret:
         return 0
