@@ -573,36 +573,34 @@ def build_group_cells(activity: Activity) -> List[Dict[str, Any]]:
     return cells
 
 def _build_individual_cells(activity: Activity, all_groups: List[str], activity_color: str, text_color: str, with_tone_class) -> List[Dict[str, Any]]:
-    cells = []
     topics = activity.topics_json if activity.topics_json else {}
-    for group in all_groups:
+
+    def _topic_for(group: str) -> str:
         if group == 'WR':
-            cells.append({
-                'colspan': 1,
-                'groups': ['WR'],
-                'class': with_tone_class('table-success', ['WR']),
-                'content': topics.get('WR', topics.get('TE', '')),
-                'color': activity_color,
-                'text_color': text_color
-            })
-        elif group == 'TE':
-            cells.append({
-                'colspan': 1,
-                'groups': ['TE'],
-                'class': with_tone_class('table-success', ['TE']),
-                'content': topics.get('TE', topics.get('WR', '')),
-                'color': activity_color,
-                'text_color': text_color
-            })
-        else:
-            cells.append({
-                'colspan': 1,
-                'groups': [group],
-                'class': with_tone_class('table-success', [group]),
-                'content': topics.get(group, ''),
-                'color': activity_color,
-                'text_color': text_color
-            })
+            return topics.get('WR', topics.get('TE', ''))
+        if group == 'TE':
+            return topics.get('TE', topics.get('WR', ''))
+        return topics.get(group, '')
+
+    # Build flat list of (group, topic) then merge consecutive same-topic cells
+    group_topics = [(g, _topic_for(g)) for g in all_groups]
+    cells = []
+    i = 0
+    while i < len(group_topics):
+        group, topic = group_topics[i]
+        j = i + 1
+        while j < len(group_topics) and group_topics[j][1] == topic:
+            j += 1
+        merged_groups = [g for g, _ in group_topics[i:j]]
+        cells.append({
+            'colspan': len(merged_groups),
+            'groups': merged_groups,
+            'class': with_tone_class('table-success', merged_groups),
+            'content': topic,
+            'color': activity_color,
+            'text_color': text_color
+        })
+        i = j
     return cells
 
 def _build_group_cells(activity: Activity, all_groups: List[str], activity_color: str, text_color: str, with_tone_class) -> List[Dict[str, Any]]:
@@ -627,15 +625,25 @@ def _build_group_cells(activity: Activity, all_groups: List[str], activity_color
                 'text_color': text_color
             })
         else:
+            # Merge consecutive unassigned groups into one empty cell
+            empty_groups = [group]
+            rendered.add(group)
+            idx = all_groups.index(group) + 1
+            while idx < len(all_groups):
+                next_group = all_groups[idx]
+                if next_group in rendered or group_to_combo.get(next_group):
+                    break
+                empty_groups.append(next_group)
+                rendered.add(next_group)
+                idx += 1
             cells.append({
-                'colspan': 1,
-                'groups': [group],
+                'colspan': len(empty_groups),
+                'groups': empty_groups,
                 'class': '',
                 'content': ' ',
                 'color': None,
                 'text_color': None
             })
-            rendered.add(group)
 
     return cells
 
