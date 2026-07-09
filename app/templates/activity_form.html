@@ -87,6 +87,7 @@
                     {% if activity and activity.topics_json %}
                         {% set combinations = activity.topics_json|parse_groups %}
                         {% for combo in combinations %}
+                        {% set combo_idx = loop.index0 %}
                         <div class="bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-lg p-4 combo-item">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
@@ -94,7 +95,7 @@
                                     <div class="flex flex-wrap gap-3">
                                         {% for group in position_groups %}
                                         <label class="inline-flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
-                                            <input class="h-4 w-4 text-indigo-600 combo-group" type="checkbox" name="combo_{{ loop.index0 }}_groups" value="{{ group }}" id="combo_{{ loop.index0 }}_{{ group }}" {% if group in combo.groups %}checked{% endif %}>
+                                            <input class="h-4 w-4 text-indigo-600 combo-group" type="checkbox" name="combo_{{ combo_idx }}_groups" value="{{ group }}" id="combo_{{ combo_idx }}_{{ group }}" {% if group in combo.groups %}checked{% endif %}>
                                             {{ group }}
                                         </label>
                                         {% endfor %}
@@ -103,7 +104,7 @@
                                 <div class="flex items-end gap-3">
                                     <div class="flex-1">
                                         <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">Thema</label>
-                                        <input type="text" name="combo_{{ loop.index0 }}_topic" value="{{ combo.topic }}" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Thema für diese Kombination">
+                                        <input type="text" name="combo_{{ combo_idx }}_topic" value="{{ combo.topic }}" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Thema für diese Kombination">
                                     </div>
                                     <button type="button" class="h-10 w-10 flex items-center justify-center text-red-600 dark:text-red-400 border border-red-200 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30" onclick="removeComboItem(this)">
                                         <i class="bi bi-x-lg"></i>
