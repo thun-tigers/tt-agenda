@@ -14,8 +14,8 @@
    ```
 
 2. **Anwendung öffnen:**
-   - Öffne Browser: http://localhost:5000
-   - Login: admin / admin
+   - Öffne Browser: http://localhost:8086
+   - Der Login erfolgt zentral über tt-auth (SSO). Es gibt keine lokalen Default-Zugangsdaten mehr; `AUTH_BASE_URL` muss auf eine erreichbare tt-auth Instanz zeigen.
 
 3. **Logs anzeigen:**
    ```bash
@@ -38,10 +38,12 @@
    ```bash
    docker run -d \
      --name tt-agenda \
-     -p 5000:5000 \
+     -p 8086:5000 \
      -v $(pwd)/instance:/app/instance \
      tt-agenda
    ```
+
+   Der Container lauscht intern auf Port `5000` (Gunicorn); nach aussen wird `8086` gemappt — analog zur `docker-compose.yml`.
 
 3. **Container stoppen:**
    ```bash
@@ -88,30 +90,18 @@ docker-compose up -d
 
 ## Produktion
 
+Die App verwendet die Flask App Factory `create_app` aus `app/__init__.py`; der Einstiegspunkt ist `run.py` (`run:app`). Es gibt keine `app.py`.
+
 ### Wichtige Sicherheitshinweise
 
-1. **Secret Key ändern:**
-   - Öffne `app.py`
-   - Ändere `app.config['SECRET_KEY']` zu einem sicheren, zufälligen Wert
+1. **Secret Key setzen:** `SECRET_KEY` in `.env` bzw. als Container-Env-Variable auf einen sicheren zufälligen Wert setzen.
 
-2. **Debug-Modus deaktivieren:**
-   - In `app.py` am Ende: `app.run(debug=False)`
+2. **Debug-Modus:** Debug wird per `FLASK_DEBUG` gesteuert und ist im Container standardmässig aus (Gunicorn statt Flask-Devserver).
 
-3. **Produktions-Server verwenden:**
-   Für Produktion solltest du einen WSGI-Server wie Gunicorn verwenden:
-   
-   ```dockerfile
-   # In Dockerfile ändern:
-   CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]
-   ```
-   
-   Und in `requirements.txt` hinzufügen:
-   ```
-   gunicorn==21.2.0
-   ```
+3. **WSGI-Server:** Gunicorn ist bereits im Dockerfile-`CMD` konfiguriert (`gunicorn --bind 0.0.0.0:5000 --workers 1 --timeout 120 run:app`) und in `requirements.txt` gepinnt — keine weiteren Anpassungen nötig.
 
 ### Port ändern
-Um einen anderen Port zu verwenden, ändere in `docker-compose.yml`:
+Der Container lauscht intern immer auf `5000`. Um einen anderen externen Port zu verwenden, in `docker-compose.yml` ändern:
 ```yaml
 ports:
   - "8080:5000"  # Externer Port:Interner Port
@@ -125,9 +115,9 @@ docker-compose logs web
 ```
 
 ### Port bereits belegt
-Ändere den Port in `docker-compose.yml` oder stoppe den anderen Service:
+Ändere den externen Port in `docker-compose.yml` oder stoppe den anderen Service:
 ```bash
-lsof -i :5000
+lsof -i :8086
 ```
 
 ### Datenbank-Probleme
@@ -161,10 +151,10 @@ docker-compose up -d
    ipconfig
    ```
 
-2. Öffne im Browser: `http://DEINE-IP:5000`
+2. Öffne im Browser: `http://DEINE-IP:8086`
 
 ### Firewall-Einstellungen
-Stelle sicher, dass Port 5000 in deiner Firewall geöffnet ist.
+Stelle sicher, dass Port 8086 (bzw. der in `docker-compose.yml` gemappte externe Port) in deiner Firewall geöffnet ist.
 
 ## Updates
 

@@ -81,17 +81,15 @@ pip install -r requirements.txt
 
 ### Schritt 4: Umgebungsvariablen konfigurieren
 
-```bash
-cp .env.example .env
-```
-
-Bearbeite `.env` mit deinen Einstellungen:
+Lege eine `.env`-Datei im Projekt-Root an (das Repo enthält keine Vorlage). Minimalinhalt:
 
 ```env
 SECRET_KEY=dein-geheimnis-schlüssel
 LOG_LEVEL=DEBUG
-AUTO_CREATE_DB=true
-CREATE_DEFAULT_USERS=true
+SQLALCHEMY_DATABASE_URI=postgresql+psycopg://tt_agenda:tt_agenda_password@localhost:5432/tt_agenda
+AUTH_BASE_URL=http://localhost:8085
+SSO_SHARED_SECRET=tt-sso-dev-secret-change-me
+SSO_EXPECTED_AUDIENCE=tt-agenda
 ```
 
 ### Schritt 5: Anwendung starten
@@ -100,7 +98,7 @@ CREATE_DEFAULT_USERS=true
 python run.py
 ```
 
-Die App läuft dann unter: **<http://127.0.0.1:5000>**
+Die App läuft dann unter: **<http://127.0.0.1:5006>** (Debug-Standardport, konfigurierbar über `PORT`).
 
 ## Konfiguration
 
@@ -110,17 +108,24 @@ Die App läuft dann unter: **<http://127.0.0.1:5000>**
 | ---------- | ------------- | ---------- |
 | `SECRET_KEY` | Flask Session-Schlüssel | Erforderlich |
 | `LOG_LEVEL` | Logging-Level (DEBUG/INFO/WARNING) | DEBUG |
-| `AUTO_CREATE_DB` | Datenbank automatisch erstellen | true |
-| `CREATE_DEFAULT_USERS` | Standard-Benutzer anlegen | true |
+| `SQLALCHEMY_DATABASE_URI` | PostgreSQL-Verbindung | Erforderlich |
+| `AUTH_BASE_URL` | Basis-URL des tt-auth Service | Erforderlich |
+| `SSO_SHARED_SECRET` | HMAC-Secret fuer SSO-JWT-Tokens | Erforderlich |
+| `SSO_EXPECTED_AUDIENCE` | Erwarteter Audience-Claim | `tt-agenda` |
+| `SSO_AUTO_PROVISION_USERS` | User bei SSO automatisch anlegen | `true` |
+| `SSO_SYNC_ROLE` | Rollen bei jedem SSO-Login synchronisieren | `true` |
 | `WEBHOOK_ENABLED` | Webhooks aktivieren | false |
 | `WEBHOOK_URL` | Webhook-Ziel-URL | Optional |
 
-### Standardbenutzer
+### Authentifizierung (SSO)
 
-Wenn `CREATE_DEFAULT_USERS=true`, werden folgende Benutzer erstellt:
+Der Login laeuft ueber den zentralen Service tt-auth. Es gibt keine lokalen Standard-Benutzer mehr.
 
-- **Admin**: `admin` / `admin123`
-- **User**: `user` / `user123`
+- `GET /login` — zeigt die Login-Seite mit Weiterleitung auf tt-auth (via `AUTH_BASE_URL`). Ein POST leitet ebenfalls dorthin um.
+- `GET /auth/sso` — Callback von tt-auth; validiert das signierte JWT (Audience `tt-agenda`), legt bei Bedarf einen User an (`SSO_AUTO_PROVISION_USERS`) und startet die Session.
+- `POST /logout` — beendet die Session und leitet auf den Logout-Endpunkt von tt-auth weiter.
+
+Details in `app/routes/auth.py` und `app/authz.py`.
 
 ## Verwendung
 
@@ -151,24 +156,30 @@ Wenn `CREATE_DEFAULT_USERS=true`, werden folgende Benutzer erstellt:
 ``` txt
 tt-agenda/
 ├── app/
-│   ├── __init__.py
+│   ├── __init__.py            # Flask App Factory (create_app)
 │   ├── config.py              # Flask-Konfiguration
 │   ├── models.py              # Datenbank-Modelle
-│   ├── extensions.py          # Flask-Erweiterungen (DB, etc.)
+│   ├── extensions.py          # Flask-Erweiterungen (DB, Limiter, ...)
 │   ├── utils.py               # Hilfsfunktionen
 │   ├── activity_colors.py     # Aktivitäts-Farbkonfiguration
+│   ├── authz.py               # SSO-Payload-Normalisierung, Rollenlogik
+│   ├── sso_replay.py          # Replay-Schutz fuer SSO-Tokens
+│   ├── forms.py               # WTForms-Definitionen
 │   ├── routes/
 │   │   ├── main.py            # Haupt-Routen
-│   │   ├── auth.py            # Authentifizierung
-│   │   └── admin.py           # Admin-Routen
+│   │   ├── auth.py            # SSO-Login/-Callback/-Logout
+│   │   ├── admin.py           # Admin-Routen
+│   │   └── api.py             # JSON-/HTMX-API (Prefix /api)
 │   ├── templates/             # Jinja2-Templates
-│   ├── static/
-│   │   └── css/
-│   │       └── style.css      # Hauptstylesheet
-│   └── instance/              # Datenbankdatei
+│   └── static/                # CSS, JS, Bilder
+├── instance/                  # SQLite-Fallback / Flask-Instance-Ordner (Root-Ebene)
+├── migrations/                # Alembic-Migrationen
 ├── tests/                     # Unit Tests
-├── run.py                     # Einstiegspunkt
+├── run.py                     # Einstiegspunkt (importiert create_app)
+├── Dockerfile
+├── docker-compose.yml
 ├── requirements.txt           # Dependencies
+├── VERSION                    # Verbindliche Service-Version
 └── README.md
 ```
 
@@ -177,7 +188,7 @@ tt-agenda/
 ### Backend
 
 - **Flask 3.0.0**: Lightweight Web Framework
-- **SQLAlchemy 3.1.1**: ORM für Datenbankoperationen
+- **Flask-SQLAlchemy 3.1.1**: ORM-Integration für Datenbankoperationen
 - **python-dotenv 1.0.0**: Umgebungsvariablen-Management
 
 ### Frontend
@@ -198,8 +209,9 @@ tt-agenda/
 
 - `GET /` - Startseite mit Trainings-Übersicht
 - `GET /live` - Live-Training View
-- `POST /auth/login` - Login
-- `GET /auth/logout` - Logout
+- `GET /login` - Login-Seite (leitet auf tt-auth weiter)
+- `GET /auth/sso` - SSO-Callback von tt-auth
+- `POST /logout` - Logout (Session löschen + tt-auth Logout)
 
 ### Admin (erfordert Admin-Rolle)
 
@@ -284,6 +296,6 @@ Bei Fragen oder Problemen bitte ein Issue erstellen oder den Administrator konta
 
 ---
 
-**Version**: 0.1.0  
-**Letzte Aktualisierung**: Januar 2026  
+**Version**: 0.1.16  
+**Letzte Aktualisierung**: Juli 2026  
 **Entwickler**: Trainingsverwaltungs-Team

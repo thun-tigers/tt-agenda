@@ -2,7 +2,9 @@
 
 ## Übersicht
 
-Diese Anleitung zeigt dir, wie du die TT-Agenda App deployen kannst.
+Diese Anleitung zeigt dir, wie du die TT-Agenda App standalone deployen kannst.
+
+> **Hinweis:** Der reguläre Produktions-Deploy erfolgt über den zentralen Stack in `../tt-infra` (Caddy-Proxy, tt-auth, gemeinsamer Docker-Compose-Stack). Die hier beschriebenen Schritte sind für Standalone-/Entwicklungs-Deploys gedacht. Für Produktion siehe die Dokumente in `tt-infra`.
 
 ## Option 1: Lokales Docker Image (Entwicklung)
 
@@ -78,7 +80,7 @@ services:
     image: ghcr.io/YOUR_USERNAME/tt-agenda:latest
     container_name: tt-agenda
     ports:
-      - "5000:5000"
+      - "8086:5000"
     volumes:
       - ./instance:/app/instance
       - ./backups:/app/backups
@@ -254,8 +256,8 @@ docker-compose -f docker-compose.prod.yml up -d
 ### Port bereits belegt
 
 ```bash
-# Prüfen welcher Prozess Port 5000 nutzt
-sudo lsof -i :5000
+# Prüfen welcher Prozess den externen Port nutzt
+sudo lsof -i :8086
 
 # Port in docker-compose.prod.yml ändern
 ports:
@@ -282,15 +284,9 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ### Wichtige Schritte für Produktion:
 
-1. **Secret Key ändern** in `app.py`:
-   ```python
-   app.config['SECRET_KEY'] = 'DEIN-SICHERER-ZUFÄLLIGER-KEY'
-   ```
+1. **Secret Key setzen**: `SECRET_KEY` als Environment-Variable im Container / in `.env` mit einem sicheren zufälligen Wert belegen. Die Konfiguration wird in `app/config.py` gelesen; `app/__init__.py` (`create_app`) baut die App über die Factory in `run.py` (`run:app`) — es existiert keine `app.py`.
 
-2. **Debug-Modus deaktivieren** in `app.py`:
-   ```python
-   app.run(debug=False, host='0.0.0.0')
-   ```
+2. **Debug-Modus**: Im Container läuft die App per Gunicorn ohne Debug. Debug lässt sich lokal nur explizit über `FLASK_DEBUG=true python run.py` aktivieren.
 
 3. **Firewall konfigurieren**:
    ```bash
@@ -311,27 +307,15 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ## Performance-Optimierung
 
-### Gunicorn statt Flask Development Server
+### WSGI-Server (Gunicorn)
 
-Ändere in `Dockerfile`:
-
-```dockerfile
-# Gunicorn installieren
-RUN pip install gunicorn
-
-# CMD ändern
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--threads", "2", "app:app"]
-```
-
-Und in `requirements.txt` hinzufügen:
-```
-gunicorn==21.2.0
-```
+Gunicorn ist bereits im `Dockerfile`-`CMD` konfiguriert und in `requirements.txt` gepinnt (`gunicorn --bind 0.0.0.0:5000 --workers 1 --timeout 120 run:app`). Für höhere Last kann die Worker-Zahl im Dockerfile erhöht oder über eine `docker-compose.override.yml` per `command:` überschrieben werden.
 
 ## Support
 
 Bei Problemen:
 1. Prüfe die Logs: `docker-compose logs -f`
-2. Prüfe den Health Check: `curl http://localhost:5000/login`
+2. Prüfe den Health Check: `curl http://localhost:8086/login` (bzw. den in `docker-compose.yml` gemappten externen Port)
 3. Siehe `README_DOCKER.md` für weitere Details
 4. Siehe `.github/workflows/README.md` für GitHub Actions Hilfe
+5. Für den regulären Produktionsbetrieb siehe `../tt-infra`.
