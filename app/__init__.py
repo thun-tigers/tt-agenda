@@ -18,11 +18,12 @@ from .utils import (
     get_position_group_labels,
     refresh_position_groups,
     get_team_like_types,
+    AGENDA_CATEGORY_DEFAULTS,
 )
 from .activity_colors import get_activity_color_map
 from datetime import timedelta
 from .routes import main, auth, admin, api
-from .models import User, ActivityType
+from .models import User, ActivityType, AgendaCategory
 import json
 from dotenv import load_dotenv
 import logging
@@ -275,6 +276,8 @@ def create_app(config_class=Config):
         statements = []
         if 'team_code' not in existing_columns:
             statements.append("ALTER TABLE training ADD COLUMN team_code VARCHAR(32)")
+        if 'category' not in existing_columns:
+            statements.append("ALTER TABLE training ADD COLUMN category VARCHAR(20)")
 
         for statement in statements:
             db.session.execute(text(statement))
@@ -284,9 +287,12 @@ def create_app(config_class=Config):
 
         # Backfill existing/null values and enforce NOT NULL semantics
         db.session.execute(text("UPDATE training SET team_code = 'SENIORS' WHERE team_code IS NULL OR team_code = ''"))
+        db.session.execute(text("UPDATE training SET category = 'training' WHERE category IS NULL OR category = ''"))
         if dialect == 'postgresql':
             db.session.execute(text("ALTER TABLE training ALTER COLUMN team_code SET DEFAULT 'SENIORS'"))
             db.session.execute(text("ALTER TABLE training ALTER COLUMN team_code SET NOT NULL"))
+            db.session.execute(text("ALTER TABLE training ALTER COLUMN category SET DEFAULT 'training'"))
+            db.session.execute(text("ALTER TABLE training ALTER COLUMN category SET NOT NULL"))
         db.session.commit()
 
     with app.app_context():
@@ -317,8 +323,25 @@ def create_app(config_class=Config):
                 existing_columns = {row[1] for row in result}
                 if 'is_hidden' not in existing_columns:
                     db.session.execute(text("ALTER TABLE training ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
+                if 'category' not in existing_columns:
+                    db.session.execute(text("ALTER TABLE training ADD COLUMN category VARCHAR(20) NOT NULL DEFAULT 'training'"))
                 db.session.commit()
             ensure_activity_types()
+            for category_data in AGENDA_CATEGORY_DEFAULTS:
+                category = AgendaCategory.query.filter_by(key=category_data['key']).first()
+                if not category:
+                    category = AgendaCategory(
+                        key=category_data['key'],
+                        label=category_data['label'],
+                        icon=category_data['icon'],
+                        badge_class=category_data['badge_class'],
+                        sort_order=category_data['sort_order'],
+                        attendance_required_for=category_data['required_for'],
+                        attendance_allowed_for=category_data['allowed_for'],
+                        show_presence_tracking=category_data['show_presence_tracking'],
+                    )
+                    db.session.add(category)
+            db.session.commit()
             refresh_position_groups()
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
     return app

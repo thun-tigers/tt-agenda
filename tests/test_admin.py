@@ -168,6 +168,7 @@ def test_create_training(client, app, login_as, csrf_token):
         from app.models import Training
         t = Training.query.filter_by(name='Neues Training').first()
         assert t is not None
+        assert t.category == 'training'
         assert t.weekday == 1
 
 
@@ -331,4 +332,3 @@ def test_json_type_stores_and_reads_list(app):
         assert 'OL' in loaded.position_groups
         assert isinstance(loaded.topics_json, dict)
         assert loaded.topics_json.get('OL') == 'Run Block'
-

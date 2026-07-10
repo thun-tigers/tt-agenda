@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from app.utils import build_activity_timeline, get_text_color_for_bg, build_group_cells, get_upcoming_trainings
 from app.models import Activity
 
@@ -208,3 +208,57 @@ def test_get_upcoming_trainings_respects_limit(monkeypatch):
     result = get_upcoming_trainings(fake_trainings, activities_by_training, {}, {}, datetime(2026, 7, 1, 12, 0), limit=1)
     assert len(result) == 1
     assert result[0]['training'].id == 1
+
+
+def test_get_upcoming_trainings_sorts_before_applying_limit(monkeypatch):
+    class FakeTraining:
+        def __init__(self, training_id):
+            self.id = training_id
+            self.is_hidden = False
+
+    fake_trainings = [FakeTraining(1), FakeTraining(2)]
+    activities_by_training = {1: [], 2: []}
+    dates_by_training = {
+        1: [datetime(2026, 7, 15).date()],
+        2: [datetime(2026, 7, 10).date()],
+    }
+
+    monkeypatch.setattr(
+        'app.utils.get_next_training_dates',
+        lambda training, activities=None, limit=None, now=None: dates_by_training[training.id],
+    )
+    monkeypatch.setattr(
+        'app.utils.resolve_activities_for_date',
+        lambda training, date, activities_by_training, instances_by_key, instance_activities_by_id: ([object()], False),
+    )
+    monkeypatch.setattr(
+        'app.utils.get_timeline_from_activities',
+        lambda activities, date: ([(object(), datetime.combine(date, time(19, 30)), datetime.combine(date, time(21, 0)))], datetime.combine(date, time(19, 30)), datetime.combine(date, time(21, 0))),
+    )
+
+    result = get_upcoming_trainings(fake_trainings, activities_by_training, {}, {}, datetime(2026, 7, 1, 12, 0), limit=1)
+    assert len(result) == 1
+    assert result[0]['training'].id == 2
+    assert result[0]['date'] == datetime(2026, 7, 10).date()
+
+
+def test_get_next_training_dates_keeps_today_visible_after_training_end(monkeypatch):
+    from app.utils import get_next_training_dates
+
+    class FakeTraining:
+        id = 1
+        start_date = date(2026, 7, 10)
+        end_date = date(2026, 7, 10)
+        weekday = 4
+
+    class FakeActivity:
+        order_index = 0
+        start_time = time(19, 30)
+        duration = 120
+
+    today = date(2026, 7, 10)
+    now = datetime.combine(today, time(23, 0))
+
+    result = get_next_training_dates(FakeTraining(), activities=[FakeActivity()], now=now)
+
+    assert result == [today]

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort
 from datetime import datetime, timedelta, date
 import json
-from ..models import Training, Activity, TrainingInstance, ActivityInstance, ActivityType
+from ..models import Training, Activity, TrainingInstance, ActivityInstance, ActivityType, AgendaCategory
 from ..extensions import db
 from ..utils import admin_required, WEEKDAYS, POSITION_GROUPS, get_active_team_code, get_activity_behavior, get_activity_color, recalculate_times, recalculate_instance_times
 from ..forms import validate_training_form, validate_hidden_training_form, sanitize_color
@@ -151,6 +151,32 @@ def admin_activity_types():
         return redirect(url_for('admin.admin_activity_types'))
     return render_template('admin_activity_types_standalone.html', activity_types=activity_types)
 
+
+@bp.route('/admin/agenda-categories', methods=['GET', 'POST'])
+@admin_required
+def admin_agenda_categories():
+    categories = AgendaCategory.query.order_by(AgendaCategory.sort_order, AgendaCategory.id).all()
+    audience_options = [
+        ('player', 'Spieler'),
+        ('coach', 'Betreuer / Coach'),
+        ('team_manager', 'Teammanager'),
+    ]
+    if request.method == 'POST':
+        for category in categories:
+            category.label = (request.form.get(f'label_{category.key}') or category.label).strip()
+            category.icon = (request.form.get(f'icon_{category.key}') or category.icon).strip()
+            category.attendance_required_for = request.form.getlist(f'required_{category.key}')
+            category.attendance_allowed_for = request.form.getlist(f'allowed_{category.key}')
+            category.show_presence_tracking = request.form.get(f'presence_{category.key}') == 'on'
+        db.session.commit()
+        flash('Agenda-Kategorien und Anmeldeprofile aktualisiert.', 'success')
+        return redirect(url_for('admin.admin_agenda_categories'))
+    return render_template(
+        'admin_agenda_categories.html',
+        categories=categories,
+        audience_options=audience_options,
+    )
+
 @bp.route('/admin/backup', methods=['GET'])
 @admin_required
 def admin_backup():
@@ -175,6 +201,7 @@ def new_hidden_training():
         training = Training(
             team_code=get_active_team_code(),
             name=request.form['name'],
+            category=request.form.get('category', 'training'),
             weekday=date_value.weekday(),
             start_date=date_value,
             end_date=date_value,
@@ -201,6 +228,7 @@ def edit_hidden_training(id):
             return render_template('hidden_training_edit.html', training=training, activities=activities)
         date_value = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
         training.name = request.form['name']
+        training.category = request.form.get('category', 'training')
         training.weekday = date_value.weekday()
         training.start_date = date_value
         training.end_date = date_value
@@ -248,6 +276,7 @@ def new_training():
         training = Training(
             team_code=get_active_team_code(),
             name=request.form['name'],
+            category=request.form.get('category', 'training'),
             weekday=int(request.form['weekday']),
             start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date(),
             end_date=datetime.strptime(request.form['end_date'], '%Y-%m-%d').date(),
@@ -278,6 +307,7 @@ def edit_training(id):
         new_start_time = datetime.strptime(request.form['start_time'], '%H:%M').time()
         
         training.name = request.form['name']
+        training.category = request.form.get('category', 'training')
         training.weekday = int(request.form['weekday'])
         training.start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d').date()
         training.end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d').date()
@@ -700,6 +730,7 @@ def copy_training(id):
     new_training = Training(
         team_code=get_active_team_code(),
         name=f"{original_training.name} (Kopie)",
+        category=original_training.category,
         weekday=original_training.weekday,
         start_date=original_training.start_date,
         end_date=original_training.end_date,
@@ -736,6 +767,7 @@ def copy_hidden_training(id):
     new_training = Training(
         team_code=get_active_team_code(),
         name=f"{original_training.name} (Kopie)",
+        category=original_training.category,
         weekday=original_training.weekday,
         start_date=original_training.start_date,
         end_date=original_training.end_date,

@@ -108,7 +108,16 @@
                         {% endif %}
                     </div>
                     
-                    <!-- Title -->
+                    <!-- Category and title -->
+                    {% if item.training.category == 'game' %}
+                    <span class="inline-flex items-center gap-1 px-3 py-1 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 text-xs font-semibold rounded-full mb-2">
+                        <i class="bi bi-trophy-fill"></i> SAISONSPIEL
+                    </span>
+                    {% elif item.training.category == 'event' %}
+                    <span class="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-semibold rounded-full mb-2">
+                        <i class="bi bi-stars"></i> EVENT
+                    </span>
+                    {% endif %}
                     <h4 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-3 sm:mb-4 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
                         {{ item.training.name }}
                     </h4>

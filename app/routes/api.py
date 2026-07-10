@@ -3,7 +3,7 @@ from datetime import datetime
 from flask import Blueprint, current_app, jsonify, request
 
 from ..extensions import db
-from ..models import User, Training, Activity, TrainingInstance, ActivityInstance
+from ..models import User, Training, Activity, TrainingInstance, ActivityInstance, AgendaCategory
 from ..utils import get_upcoming_trainings
 
 bp = Blueprint('api', __name__, url_prefix='/api')
@@ -79,6 +79,17 @@ def _serialize_training(item):
     training = item['training']
     date = item.get('date')
     occurrence_id = item.get('occurrence_id') or (f'{training.id}:{date.isoformat()}' if date else str(training.id))
+    category = AgendaCategory.query.filter_by(key=training.category or 'training').first()
+    category_key = category.key if category else (training.category or 'training')
+    category_payload = {
+        'key': category_key,
+        'label': category.label if category else category_key,
+        'icon': category.icon if category else 'bi-calendar-event',
+        'badge_class': category.badge_class if category else '',
+        'required_for': category.attendance_required_for if category else ['player'],
+        'allowed_for': category.attendance_allowed_for if category else ['player'],
+        'show_presence_tracking': category.show_presence_tracking if category else True,
+    }
     return {
         'id': occurrence_id,
         'occurrence_id': occurrence_id,
@@ -86,6 +97,8 @@ def _serialize_training(item):
         'template_id': str(item.get('template_id') or training.id),
         'instance_id': item.get('instance_id'),
         'title': training.name,
+        'category': category_key,
+        'category_meta': category_payload,
         'team_code': training.team_code,
         'date': date.isoformat() if date else None,
         'time': f"{item['start_time'].strftime('%H:%M')} - {item['end_time'].strftime('%H:%M')}" if item.get('start_time') and item.get('end_time') else None,

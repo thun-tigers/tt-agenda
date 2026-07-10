@@ -32,6 +32,7 @@ class Training(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     team_code = db.Column(db.String(32), nullable=False, default='SENIORS', index=True)
     name = db.Column(db.String(100), nullable=False)
+    category = db.Column(db.String(20), nullable=False, default='training', index=True)
     weekday = db.Column(db.Integer, nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
@@ -39,6 +40,21 @@ class Training(db.Model):
     is_hidden = db.Column(db.Boolean, default=False, nullable=False)
     activities = db.relationship('Activity', backref='training', lazy=True, cascade='all, delete-orphan')
     instances = db.relationship('TrainingInstance', backref='training', lazy=True, cascade='all, delete-orphan')
+
+
+class AgendaCategory(db.Model):
+    __tablename__ = 'agenda_category'
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(40), unique=True, nullable=False)
+    label = db.Column(db.String(100), nullable=False)
+    icon = db.Column(db.String(50), nullable=False, default='bi-calendar-event')
+    badge_class = db.Column(db.String(200), nullable=False, default='bg-slate-100 text-slate-700')
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    active = db.Column(db.Boolean, nullable=False, default=True)
+    attendance_required_for = db.Column(JsonType, nullable=False, default=list)
+    attendance_allowed_for = db.Column(JsonType, nullable=False, default=list)
+    show_presence_tracking = db.Column(db.Boolean, nullable=False, default=True)
 
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)

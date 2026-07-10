@@ -26,6 +26,43 @@ POSITION_GROUP_DEFAULTS = [
 POSITION_GROUPS = [item['key'] for item in POSITION_GROUP_DEFAULTS]
 POSITION_GROUP_LABELS = {item['key']: item['label'] for item in POSITION_GROUP_DEFAULTS}
 
+AGENDA_CATEGORY_DEFAULTS = [
+    {
+        'key': 'training',
+        'label': 'Training',
+        'icon': 'bi-calendar-event',
+        'badge_class': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+        'sort_order': 1,
+        'required_for': ['player'],
+        'allowed_for': ['player'],
+        'show_presence_tracking': True,
+    },
+    {
+        'key': 'game',
+        'label': 'Saison-Spiel',
+        'icon': 'bi-trophy-fill',
+        'badge_class': 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+        'sort_order': 2,
+        'required_for': ['player', 'coach', 'team_manager'],
+        'allowed_for': ['player', 'coach', 'team_manager'],
+        'show_presence_tracking': True,
+    },
+    {
+        'key': 'event',
+        'label': 'Event',
+        'icon': 'bi-stars',
+        'badge_class': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+        'sort_order': 3,
+        'required_for': ['coach', 'team_manager'],
+        'allowed_for': ['player', 'coach', 'team_manager'],
+        'show_presence_tracking': True,
+    },
+]
+
+
+def get_agenda_category_defaults():
+    return {item['key']: item for item in AGENDA_CATEGORY_DEFAULTS}
+
 
 def _infra_base_url():
     return (
@@ -350,7 +387,10 @@ def get_next_training_dates(training, activities: Optional[List[Activity]] = Non
                 activities = Activity.query.filter_by(training_id=training.id).order_by(Activity.order_index, Activity.id).all()
             if activities:
                 timeline = build_activity_timeline(activities, today)
-                if timeline and now < timeline[-1][2]:
+                # Für die Attendance-Seite muss der heutige Termin auch nach
+                # Trainingsende noch sichtbar bleiben, damit Nachmeldungen
+                # möglich sind.
+                if timeline:
                     dates.append(current)
         else:
             dates.append(current)
@@ -508,8 +548,6 @@ def get_upcoming_trainings(trainings: List[Training], activities_by_training: Di
                 'is_cancelled': is_cancelled,
                 'is_free': bool(training.is_hidden)
             })
-            if limit and len(upcoming_trainings) >= limit:
-                return upcoming_trainings
 
     upcoming_trainings.sort(key=lambda x: (x['date'], x['start_time']))
     if limit:

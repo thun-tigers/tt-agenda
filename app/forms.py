@@ -22,6 +22,15 @@ class TrainingForm(Form):
         'Name',
         validators=[DataRequired(message='Name ist erforderlich.'), Length(max=100)]
     )
+    category = SelectField(
+        'Kategorie',
+        choices=[
+            ('training', 'Training'),
+            ('game', 'Saison-Spiel'),
+            ('event', 'Event'),
+        ],
+        validators=[Optional()],
+    )
     weekday = IntegerField(
         'Wochentag',
         validators=[NumberRange(min=0, max=6, message='Ungültiger Wochentag (0–6).')]
@@ -39,6 +48,15 @@ class HiddenTrainingForm(Form):
     name = StringField(
         'Name',
         validators=[DataRequired(message='Name ist erforderlich.'), Length(max=100)]
+    )
+    category = SelectField(
+        'Kategorie',
+        choices=[
+            ('training', 'Training'),
+            ('game', 'Saison-Spiel'),
+            ('event', 'Event'),
+        ],
+        validators=[Optional()],
     )
     date = DateField('Datum', validators=[DataRequired()])
     start_time = TimeField('Startzeit', validators=[DataRequired()])
