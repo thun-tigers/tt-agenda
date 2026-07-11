@@ -258,7 +258,13 @@ def get_available_teams():
 
 
 def get_active_team_code():
+    """Gibt den aktiven Teamcode zurück, oder None wenn 'Alle Teams' aktiv ist."""
+    if session.get('active_team_code') == '__ALL__':
+        return None
+
     teams = get_available_teams()
+    if not teams:
+        return None
     available_codes = {team['code'] for team in teams}
     active = (session.get('active_team_code') or '').strip().upper()
 
@@ -271,7 +277,11 @@ def get_active_team_code():
 
 
 def get_active_team_name():
+    if session.get('active_team_code') == '__ALL__':
+        return 'Alle Teams'
     active = get_active_team_code()
+    if not active:
+        return 'Alle Teams'
     teams = get_available_teams()
     for team in teams:
         if team['code'] == active:

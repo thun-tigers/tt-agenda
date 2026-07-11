@@ -53,23 +53,33 @@
 
 {# Team-Filter-Leiste #}
 {% block page_filters %}
-{% if available_teams|length > 1 %}
+{% if available_teams|length >= 1 %}
 <div class="sticky top-14 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 glass">
   <div class="max-w-7xl mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto scrollbar-none">
     <span class="shrink-0 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Team</span>
-    {% for team in available_teams %}
-    <form method="POST" action="{{ url_for('auth.switch_team') }}" class="shrink-0">
+    <form id="team-switch-form" method="POST" action="{{ url_for('auth.switch_team') }}" class="hidden">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="next" value="{{ request.full_path }}">
-      <input type="hidden" name="team_code" value="{{ team.code }}">
-      <button type="submit" class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border transition
-        {{ 'border-indigo-300 dark:border-indigo-700 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' if team.code == active_team_code else 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-700 dark:hover:text-indigo-300' }}">
-        {{ team.name }}
-      </button>
+      <input type="hidden" id="team-switch-code" name="team_code" value="">
     </form>
+    <button onclick="switchTeam('__ALL__')" class="shrink-0 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border transition
+      {{ 'border-indigo-300 dark:border-indigo-700 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' if not active_team_code else 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-700 dark:hover:text-indigo-300' }}">
+      Alle Teams
+    </button>
+    {% for team in available_teams %}
+    <button onclick="switchTeam('{{ team.code }}')" class="shrink-0 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border transition
+      {{ 'border-indigo-300 dark:border-indigo-700 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' if team.code == active_team_code else 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-700 dark:hover:text-indigo-300' }}">
+      {{ team.name }}
+    </button>
     {% endfor %}
   </div>
 </div>
+<script>
+function switchTeam(code) {
+  document.getElementById('team-switch-code').value = code;
+  document.getElementById('team-switch-form').submit();
+}
+</script>
 {% endif %}
 {% endblock %}
 

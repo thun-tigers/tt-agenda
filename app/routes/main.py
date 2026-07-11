@@ -42,7 +42,10 @@ def index():
             session.permanent = True  # Sicherstellen, dass die Session permanent ist
 
         team_code = get_active_team_code()
-        trainings = Training.query.filter_by(team_code=team_code).all()
+        trainings_query = Training.query
+        if team_code:
+            trainings_query = trainings_query.filter_by(team_code=team_code)
+        trainings = trainings_query.all()
         training_ids = [training.id for training in trainings]
         activities_by_training = {training.id: [] for training in trainings}
         if training_ids:
@@ -88,7 +91,7 @@ def index():
 def live():
     try:
         team_code = get_active_team_code()
-        trainings, activities_by_training, instances_by_key, instance_activities_by_id = load_training_data(team_code=team_code)
+        trainings, activities_by_training, instances_by_key, instance_activities_by_id = load_training_data(team_code=team_code or None)
 
         now = datetime.now()
         today = now.date()

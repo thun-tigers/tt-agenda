@@ -137,7 +137,9 @@ def switch_team():
     if not allowed:
         allowed = {'SENIORS'}
 
-    if target and target in allowed:
+    if target == '__ALL__':
+        session['active_team_code'] = '__ALL__'
+    elif target and target in allowed:
         session['active_team_code'] = target
     else:
         flash('Ungültige Mannschaftsauswahl.', 'warning')
