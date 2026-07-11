@@ -554,6 +554,64 @@ def get_upcoming_trainings(trainings: List[Training], activities_by_training: Di
         return upcoming_trainings[:limit]
     return upcoming_trainings
 
+def get_past_training_dates(training, activities: Optional[List[Activity]] = None, weeks: int = 4):
+    """Berechnet vergangene Trainingsdaten für die letzten N Wochen."""
+    today = datetime.now().date()
+    dates = []
+
+    from_date = today - timedelta(weeks=weeks)
+    start = max(from_date, training.start_date)
+    days_ahead = (training.weekday - start.weekday()) % 7
+    current = start + timedelta(days=days_ahead)
+
+    while current < today and current <= training.end_date:
+        dates.append(current)
+        current += timedelta(days=7)
+
+    return dates
+
+
+def get_past_trainings(trainings: List[Training], activities_by_training: Dict[int, List[Activity]], instances_by_key: Dict[tuple, TrainingInstance], instance_activities_by_id: Dict[int, List[ActivityInstance]], weeks: int = 4):
+    """Baut die Liste vergangener Trainings für die letzten N Wochen."""
+    past_trainings = []
+
+    for training in trainings:
+        template_activities = activities_by_training.get(training.id, [])
+        past_dates = get_past_training_dates(training, activities=template_activities, weeks=weeks)
+        for date in past_dates:
+            instance = instances_by_key.get((training.id, date))
+            activities, is_cancelled = resolve_activities_for_date(training, date, activities_by_training, instances_by_key, instance_activities_by_id)
+            display_activities = activities
+            if is_cancelled:
+                display_activities = instance_activities_by_id.get(instance.id, []) if instance else []
+                if not display_activities:
+                    display_activities = template_activities
+            timeline, start_dt, end_dt = get_timeline_from_activities(display_activities, date)
+            if not timeline:
+                continue
+
+            occurrence_id = f'{training.id}:{date.isoformat()}'
+            past_trainings.append({
+                'training': training,
+                'template_id': training.id,
+                'instance_id': instance.id if instance else None,
+                'occurrence_id': occurrence_id,
+                'date': date,
+                'start_time': start_dt.time(),
+                'end_time': end_dt.time(),
+                'is_today': False,
+                'is_running': False,
+                'is_upcoming': False,
+                'activities_count': len(display_activities),
+                'is_individual': bool(instance and instance.status == 'active'),
+                'is_cancelled': is_cancelled,
+                'is_free': bool(training.is_hidden),
+            })
+
+    past_trainings.sort(key=lambda x: (x['date'], x['start_time']), reverse=True)
+    return past_trainings
+
+
 def get_text_color_for_bg(bg_color):
     """Berechnet die passende Textfarbe (schwarz/weiß) basierend auf der Hintergrundfarbe."""
     if not bg_color or not bg_color.startswith('#'):

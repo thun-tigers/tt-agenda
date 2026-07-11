@@ -4,7 +4,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from ..extensions import db
 from ..models import User, Training, Activity, TrainingInstance, ActivityInstance, AgendaCategory
-from ..utils import get_upcoming_trainings
+from ..utils import get_upcoming_trainings, get_past_trainings
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -124,6 +124,53 @@ def trainings():
     return jsonify({
         'trainings': [_serialize_training(item) for item in upcoming],
         'teams': team_codes,
+    })
+
+
+@bp.route('/trainings/past', methods=['GET'])
+def past_trainings():
+    if not _authorized():
+        return jsonify({'error': 'unauthorized'}), 401
+
+    team_codes = _parse_team_codes(request.args.get('teams'))
+    weeks = request.args.get('weeks', type=int) or 4
+
+    trainings_query = Training.query
+    if team_codes:
+        trainings_query = trainings_query.filter(Training.team_code.in_(team_codes))
+    trainings = trainings_query.order_by(Training.start_date.asc()).all()
+    training_ids = [t.id for t in trainings]
+
+    activities_by_training = {t.id: [] for t in trainings}
+    if training_ids:
+        for activity in (
+            Activity.query
+            .filter(Activity.training_id.in_(training_ids))
+            .order_by(Activity.training_id, Activity.order_index)
+            .all()
+        ):
+            activities_by_training[activity.training_id].append(activity)
+
+    instances_by_key = {}
+    instance_activities_by_id = {}
+    if training_ids:
+        instances = TrainingInstance.query.filter(TrainingInstance.training_id.in_(training_ids)).all()
+        instance_ids = [i.id for i in instances]
+        instances_by_key = {(i.training_id, i.date): i for i in instances}
+        if instance_ids:
+            for activity in (
+                ActivityInstance.query
+                .filter(ActivityInstance.training_instance_id.in_(instance_ids))
+                .order_by(ActivityInstance.training_instance_id, ActivityInstance.order_index)
+                .all()
+            ):
+                instance_activities_by_id.setdefault(activity.training_instance_id, []).append(activity)
+
+    past = get_past_trainings(trainings, activities_by_training, instances_by_key, instance_activities_by_id, weeks=weeks)
+    return jsonify({
+        'trainings': [_serialize_training(item) for item in past],
+        'teams': team_codes,
+        'weeks': weeks,
     })
 
 
