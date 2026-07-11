@@ -608,7 +608,7 @@ def get_past_trainings(trainings: List[Training], activities_by_training: Dict[i
                 'is_free': bool(training.is_hidden),
             })
 
-    past_trainings.sort(key=lambda x: (x['date'], x['start_time']), reverse=True)
+    past_trainings.sort(key=lambda x: (x['date'], x['start_time']))
     return past_trainings
 
 
