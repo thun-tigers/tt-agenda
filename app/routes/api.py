@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request
@@ -5,6 +6,8 @@ from flask import Blueprint, current_app, jsonify, request
 from ..extensions import db
 from ..models import User, Training, Activity, TrainingInstance, ActivityInstance, AgendaCategory
 from ..utils import get_upcoming_trainings, get_past_trainings
+
+_CATEGORY_KEY_RE = re.compile(r'^[a-z0-9_-]{1,40}$')
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -192,6 +195,95 @@ def training_detail(occurrence_id):
             return jsonify(payload)
 
     return jsonify({'error': 'not_found'}), 404
+
+
+def _cat_to_dict(cat):
+    return {
+        'key': cat.key,
+        'label': cat.label,
+        'icon': cat.icon,
+        'badge_class': cat.badge_class,
+        'sort_order': cat.sort_order,
+        'active': cat.active,
+        'attendance_required_for': cat.attendance_required_for or [],
+        'attendance_allowed_for': cat.attendance_allowed_for or [],
+        'show_presence_tracking': cat.show_presence_tracking,
+    }
+
+
+@bp.route('/internal/agenda-categories', methods=['GET'])
+def internal_agenda_categories_list():
+    if not _authorized():
+        return jsonify({'error': 'unauthorized'}), 401
+    cats = AgendaCategory.query.order_by(AgendaCategory.sort_order, AgendaCategory.id).all()
+    return jsonify({'categories': [_cat_to_dict(c) for c in cats]})
+
+
+@bp.route('/internal/agenda-categories', methods=['POST'])
+def internal_agenda_categories_create():
+    if not _authorized():
+        return jsonify({'error': 'unauthorized'}), 401
+    data = request.get_json(silent=True) or {}
+    key = (data.get('key') or '').strip().lower()
+    label = (data.get('label') or '').strip()
+    if not key or not _CATEGORY_KEY_RE.match(key):
+        return jsonify({'error': 'invalid_key'}), 400
+    if not label:
+        return jsonify({'error': 'label_required'}), 400
+    if AgendaCategory.query.filter_by(key=key).first():
+        return jsonify({'error': 'key_exists'}), 409
+    cat = AgendaCategory(
+        key=key,
+        label=label,
+        icon=(data.get('icon') or 'bi-calendar-event').strip(),
+        badge_class=(data.get('badge_class') or 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300').strip(),
+        sort_order=int(data.get('sort_order') or 0),
+        active=bool(data.get('active', True)),
+        attendance_required_for=data.get('attendance_required_for') or [],
+        attendance_allowed_for=data.get('attendance_allowed_for') or [],
+        show_presence_tracking=bool(data.get('show_presence_tracking', True)),
+    )
+    db.session.add(cat)
+    db.session.commit()
+    return jsonify({'category': _cat_to_dict(cat)}), 201
+
+
+@bp.route('/internal/agenda-categories/<string:key>', methods=['PUT'])
+def internal_agenda_categories_update(key):
+    if not _authorized():
+        return jsonify({'error': 'unauthorized'}), 401
+    cat = AgendaCategory.query.filter_by(key=key).first()
+    if not cat:
+        return jsonify({'error': 'not_found'}), 404
+    data = request.get_json(silent=True) or {}
+    label = (data.get('label') or '').strip()
+    if not label:
+        return jsonify({'error': 'label_required'}), 400
+    cat.label = label
+    cat.icon = (data.get('icon') or cat.icon).strip()
+    cat.badge_class = (data.get('badge_class') or cat.badge_class).strip()
+    cat.sort_order = int(data.get('sort_order') if data.get('sort_order') is not None else cat.sort_order)
+    cat.active = bool(data.get('active', cat.active))
+    cat.attendance_required_for = data.get('attendance_required_for') if data.get('attendance_required_for') is not None else cat.attendance_required_for
+    cat.attendance_allowed_for = data.get('attendance_allowed_for') if data.get('attendance_allowed_for') is not None else cat.attendance_allowed_for
+    cat.show_presence_tracking = bool(data.get('show_presence_tracking', cat.show_presence_tracking))
+    db.session.commit()
+    return jsonify({'category': _cat_to_dict(cat)})
+
+
+@bp.route('/internal/agenda-categories/<string:key>', methods=['DELETE'])
+def internal_agenda_categories_delete(key):
+    if not _authorized():
+        return jsonify({'error': 'unauthorized'}), 401
+    cat = AgendaCategory.query.filter_by(key=key).first()
+    if not cat:
+        return jsonify({'error': 'not_found'}), 404
+    in_use = Training.query.filter_by(category=key).first()
+    if in_use:
+        return jsonify({'error': 'in_use'}), 409
+    db.session.delete(cat)
+    db.session.commit()
+    return jsonify({'status': 'deleted'})
 
 
 @bp.route('/internal/users/<int:auth_user_id>', methods=['DELETE'])
