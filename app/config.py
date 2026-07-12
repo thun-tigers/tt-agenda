@@ -25,6 +25,7 @@ class Config:
     SSO_REPLAY_TTL_SECONDS = int(os.environ.get('SSO_REPLAY_TTL_SECONDS', 300))
     SSO_AUTO_PROVISION_USERS = os.environ.get('SSO_AUTO_PROVISION_USERS', 'true').lower() == 'true'
     SSO_SYNC_ROLE = os.environ.get('SSO_SYNC_ROLE', 'true').lower() == 'true'
+    TT_AUTH_INTERNAL_URL = os.environ.get('TT_AUTH_INTERNAL_URL', 'http://tt-auth:5000')
     TT_MEMBERS_INTERNAL_URL = os.environ.get('TT_MEMBERS_INTERNAL_URL')
     INTERNAL_API_SECRET = os.environ.get('INTERNAL_API_SECRET') or SSO_SHARED_SECRET
     TT_INFRA_INTERNAL_URL = os.environ.get('TT_INFRA_INTERNAL_URL')

@@ -1,6 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort
+from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, jsonify, abort
 from datetime import datetime, timedelta, date
 import json
+import urllib.error
+import urllib.request
 from ..models import Training, Activity, TrainingInstance, ActivityInstance, ActivityType, AgendaCategory
 from ..extensions import db
 from ..utils import admin_required, WEEKDAYS, POSITION_GROUPS, get_active_team_code, get_activity_behavior, get_activity_color, recalculate_times, recalculate_instance_times
@@ -8,12 +10,34 @@ from ..forms import validate_training_form, validate_hidden_training_form, sanit
 
 bp = Blueprint('admin', __name__)
 
+_FALLBACK_ROLES = [
+    {'key': 'player', 'label': 'Spieler'},
+    {'key': 'coach', 'label': 'Betreuer / Coach'},
+    {'key': 'team_manager', 'label': 'Teammanager'},
+]
+
+
+def _fetch_member_roles():
+    try:
+        auth_base = (current_app.config.get('TT_AUTH_INTERNAL_URL') or 'http://tt-auth:5000').rstrip('/')
+        secret = current_app.config.get('INTERNAL_API_SECRET', '')
+        req = urllib.request.Request(
+            f'{auth_base}/api/internal/member-roles',
+            headers={'X-TT-Internal-Secret': secret},
+        )
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode())
+            roles = [r for r in data.get('roles', []) if r.get('is_active')]
+            return roles or _FALLBACK_ROLES
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return _FALLBACK_ROLES
+
 
 def _participation_overrides(form):
     if form.get('override_enabled') != 'on':
         return None
-    required = [item.strip().lower() for value in form.getlist('override_required_for') for item in value.split(',') if item.strip()]
-    allowed = [item.strip().lower() for value in form.getlist('override_allowed_for') for item in value.split(',') if item.strip()]
+    required = form.getlist('override_required_for')
+    allowed = form.getlist('override_allowed_for')
     return {
         'required_for': required,
         'allowed_for': allowed or required,
@@ -286,7 +310,7 @@ def new_training():
             for field_errors in errors.values():
                 for msg in field_errors:
                     flash(msg, 'danger')
-            return render_template('training_form.html', weekdays=WEEKDAYS)
+            return render_template('training_form.html', weekdays=WEEKDAYS, audience_options=_fetch_member_roles())
         training = Training(
             team_code=get_active_team_code(),
             name=request.form['name'],
@@ -301,7 +325,7 @@ def new_training():
         db.session.commit()
         flash('Training erfolgreich erstellt!', 'success')
         return redirect(url_for('admin.edit_training', id=training.id))
-    return render_template('training_form.html', weekdays=WEEKDAYS)
+    return render_template('training_form.html', weekdays=WEEKDAYS, audience_options=_fetch_member_roles())
 
 @bp.route('/training/<int:id>/edit', methods=['GET', 'POST'])
 @admin_required
@@ -317,7 +341,7 @@ def edit_training(id):
                     flash(msg, 'danger')
             activities = Activity.query.filter_by(training_id=id).order_by(Activity.order_index).all()
             instances = TrainingInstance.query.filter_by(training_id=id).order_by(TrainingInstance.date.asc()).all()
-            return render_template('training_edit.html', training=training, activities=activities, instances=instances, activities_json=json.dumps([]), weekdays=WEEKDAYS, position_groups=POSITION_GROUPS)
+            return render_template('training_edit.html', training=training, activities=activities, instances=instances, activities_json=json.dumps([]), weekdays=WEEKDAYS, position_groups=POSITION_GROUPS, audience_options=_fetch_member_roles())
         old_start_time = training.start_time
         new_start_time = datetime.strptime(request.form['start_time'], '%H:%M').time()
         
@@ -348,7 +372,7 @@ def edit_training(id):
         'topics_json': a.topics_json,
         'color': a.color if hasattr(a, 'color') and a.color else get_activity_color(a.activity_type, 'light')
     } for a in activities]
-    return render_template('training_edit.html', training=training, activities=activities, instances=instances, activities_json=json.dumps(activities_json), weekdays=WEEKDAYS, position_groups=POSITION_GROUPS)
+    return render_template('training_edit.html', training=training, activities=activities, instances=instances, activities_json=json.dumps(activities_json), weekdays=WEEKDAYS, position_groups=POSITION_GROUPS, audience_options=_fetch_member_roles())
 
 def _parse_instance_date(training):
     date_str = request.form.get('date')
