@@ -278,6 +278,8 @@ def create_app(config_class=Config):
             statements.append("ALTER TABLE training ADD COLUMN team_code VARCHAR(32)")
         if 'category' not in existing_columns:
             statements.append("ALTER TABLE training ADD COLUMN category VARCHAR(20)")
+        if 'participation_rules_json' not in existing_columns:
+            statements.append("ALTER TABLE training ADD COLUMN participation_rules_json TEXT")
 
         for statement in statements:
             db.session.execute(text(statement))

@@ -33,6 +33,7 @@ class Training(db.Model):
     team_code = db.Column(db.String(32), nullable=False, default='SENIORS', index=True)
     name = db.Column(db.String(100), nullable=False)
     category = db.Column(db.String(20), nullable=False, default='training', index=True)
+    participation_rules_json = db.Column(JsonType, nullable=True, default=dict)
     weekday = db.Column(db.Integer, nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)

@@ -9,6 +9,18 @@ from ..forms import validate_training_form, validate_hidden_training_form, sanit
 bp = Blueprint('admin', __name__)
 
 
+def _participation_overrides(form):
+    if form.get('override_enabled') != 'on':
+        return None
+    required = [item.strip().lower() for value in form.getlist('override_required_for') for item in value.split(',') if item.strip()]
+    allowed = [item.strip().lower() for value in form.getlist('override_allowed_for') for item in value.split(',') if item.strip()]
+    return {
+        'required_for': required,
+        'allowed_for': allowed or required,
+        'show_presence_tracking': form.get('override_presence') == 'on',
+    }
+
+
 def get_database_backend():
     engine = db.engine
     return engine.dialect.name
@@ -202,6 +214,7 @@ def new_hidden_training():
             team_code=get_active_team_code(),
             name=request.form['name'],
             category=request.form.get('category', 'training'),
+            participation_rules_json=_participation_overrides(request.form),
             weekday=date_value.weekday(),
             start_date=date_value,
             end_date=date_value,
@@ -229,6 +242,7 @@ def edit_hidden_training(id):
         date_value = datetime.strptime(request.form['date'], '%Y-%m-%d').date()
         training.name = request.form['name']
         training.category = request.form.get('category', 'training')
+        training.participation_rules_json = _participation_overrides(request.form)
         training.weekday = date_value.weekday()
         training.start_date = date_value
         training.end_date = date_value
@@ -277,6 +291,7 @@ def new_training():
             team_code=get_active_team_code(),
             name=request.form['name'],
             category=request.form.get('category', 'training'),
+            participation_rules_json=_participation_overrides(request.form),
             weekday=int(request.form['weekday']),
             start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date(),
             end_date=datetime.strptime(request.form['end_date'], '%Y-%m-%d').date(),
@@ -308,6 +323,7 @@ def edit_training(id):
         
         training.name = request.form['name']
         training.category = request.form.get('category', 'training')
+        training.participation_rules_json = _participation_overrides(request.form)
         training.weekday = int(request.form['weekday'])
         training.start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d').date()
         training.end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d').date()

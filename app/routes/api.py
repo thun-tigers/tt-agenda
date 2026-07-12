@@ -90,6 +90,11 @@ def _serialize_training(item):
         'allowed_for': category.attendance_allowed_for if category else ['player'],
         'show_presence_tracking': category.show_presence_tracking if category else True,
     }
+    overrides = training.participation_rules_json or {}
+    if isinstance(overrides, dict):
+        for key in ('required_for', 'allowed_for', 'show_presence_tracking'):
+            if key in overrides:
+                category_payload[key] = overrides[key]
     return {
         'id': occurrence_id,
         'occurrence_id': occurrence_id,

@@ -49,8 +49,8 @@
                     </select>
                 </div>
 
-                <div>
-                    <label for="category" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            <div>
+                <label for="category" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                         <i class="bi bi-bookmark mr-2"></i>Kategorie
                     </label>
                     <select id="category" name="category" required
@@ -60,6 +60,13 @@
                         <option value="event">Event</option>
                     </select>
                 </div>
+            </div>
+            <div class="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-900/20 p-4 space-y-3">
+                <label class="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" name="override_enabled"> Teilnahmebedingungen dieses Termins überschreiben</label>
+                <p class="text-xs text-slate-500">Rollen kommasepariert angeben; leer bleibt die Kategorie-Regel aktiv.</p>
+                <input name="override_required_for" placeholder="Anmeldepflichtige Rollen, z.B. player" class="w-full rounded-lg border px-3 py-2 text-sm">
+                <input name="override_allowed_for" placeholder="Sichtbare Rollen, z.B. player,coach" class="w-full rounded-lg border px-3 py-2 text-sm">
+                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="override_presence" checked> Präsenz erfassen</label>
             </div>
             
             <!-- Start-/Endzeit -->

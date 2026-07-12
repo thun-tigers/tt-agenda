@@ -58,6 +58,12 @@
                 </div>
                 <div class="hidden lg:block"></div>
             </div>
+            <div class="mb-4 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-900/20 p-4 space-y-3">
+                <label class="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" name="override_enabled" {% if training.participation_rules_json %}checked{% endif %}> Teilnahmebedingungen dieses Termins überschreiben</label>
+                <input name="override_required_for" value="{{ (training.participation_rules_json or {}).get('required_for', [])|join(',') }}" placeholder="Anmeldepflichtige Rollen" class="w-full rounded-lg border px-3 py-2 text-sm">
+                <input name="override_allowed_for" value="{{ (training.participation_rules_json or {}).get('allowed_for', [])|join(',') }}" placeholder="Sichtbare Rollen" class="w-full rounded-lg border px-3 py-2 text-sm">
+                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="override_presence" {% if not training.participation_rules_json or training.participation_rules_json.get('show_presence_tracking', True) %}checked{% endif %}> Präsenz erfassen</label>
+            </div>
 
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-2 sm:justify-end">
