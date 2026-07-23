@@ -30,7 +30,8 @@ import logging
 import secrets
 import requests
 from sqlalchemy import inspect, text
-from sqlalchemy.exc import OperationalError
+
+from .db_bootstrap import schema_setup_lock
 import sys
 from pathlib import Path
 from jinja2 import FileSystemLoader
@@ -299,52 +300,48 @@ def create_app(config_class=Config):
 
     with app.app_context():
         if app.config.get('AUTO_CREATE_DB'):
-            try:
+            with schema_setup_lock(db.engine):
                 db.create_all()
-            except OperationalError as exc:
-                if 'already exists' not in str(exc).lower():
-                    raise
-                app.logger.warning('DB init race condition detected; continuing.')
-            ensure_user_auth_claim_columns()
-            ensure_training_team_column()
-            # Backward-compat shim for existing deployments that do not run
-            # `flask db upgrade`. New installations use Alembic migrations.
-            if db.engine.dialect.name == 'sqlite':
-                table_exists = db.session.execute(
-                    text("SELECT name FROM sqlite_master WHERE type='table' AND name='activity_type'")
-                ).fetchone()
-                if table_exists:
-                    result = db.session.execute(text("PRAGMA table_info(activity_type)")).fetchall()
-                    existing_columns = {row[1] for row in result}
-                    if 'light_color' not in existing_columns:
-                        db.session.execute(text("ALTER TABLE activity_type ADD COLUMN light_color VARCHAR(7) NOT NULL DEFAULT '#E8E8E8'"))
-                    if 'dark_color' not in existing_columns:
-                        db.session.execute(text("ALTER TABLE activity_type ADD COLUMN dark_color VARCHAR(7) NOT NULL DEFAULT '#4A4A4A'"))
+                ensure_user_auth_claim_columns()
+                ensure_training_team_column()
+                # Backward-compat shim for existing deployments that do not run
+                # `flask db upgrade`. New installations use Alembic migrations.
+                if db.engine.dialect.name == 'sqlite':
+                    table_exists = db.session.execute(
+                        text("SELECT name FROM sqlite_master WHERE type='table' AND name='activity_type'")
+                    ).fetchone()
+                    if table_exists:
+                        result = db.session.execute(text("PRAGMA table_info(activity_type)")).fetchall()
+                        existing_columns = {row[1] for row in result}
+                        if 'light_color' not in existing_columns:
+                            db.session.execute(text("ALTER TABLE activity_type ADD COLUMN light_color VARCHAR(7) NOT NULL DEFAULT '#E8E8E8'"))
+                        if 'dark_color' not in existing_columns:
+                            db.session.execute(text("ALTER TABLE activity_type ADD COLUMN dark_color VARCHAR(7) NOT NULL DEFAULT '#4A4A4A'"))
 
-                result = db.session.execute(text("PRAGMA table_info(training)")).fetchall()
-                existing_columns = {row[1] for row in result}
-                if 'is_hidden' not in existing_columns:
-                    db.session.execute(text("ALTER TABLE training ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
-                if 'category' not in existing_columns:
-                    db.session.execute(text("ALTER TABLE training ADD COLUMN category VARCHAR(20) NOT NULL DEFAULT 'training'"))
+                    result = db.session.execute(text("PRAGMA table_info(training)")).fetchall()
+                    existing_columns = {row[1] for row in result}
+                    if 'is_hidden' not in existing_columns:
+                        db.session.execute(text("ALTER TABLE training ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
+                    if 'category' not in existing_columns:
+                        db.session.execute(text("ALTER TABLE training ADD COLUMN category VARCHAR(20) NOT NULL DEFAULT 'training'"))
+                    db.session.commit()
+                ensure_activity_types()
+                for category_data in AGENDA_CATEGORY_DEFAULTS:
+                    category = AgendaCategory.query.filter_by(key=category_data['key']).first()
+                    if not category:
+                        category = AgendaCategory(
+                            key=category_data['key'],
+                            label=category_data['label'],
+                            icon=category_data['icon'],
+                            badge_class=category_data['badge_class'],
+                            sort_order=category_data['sort_order'],
+                            attendance_required_for=category_data['required_for'],
+                            attendance_allowed_for=category_data['allowed_for'],
+                            show_presence_tracking=category_data['show_presence_tracking'],
+                        )
+                        db.session.add(category)
                 db.session.commit()
-            ensure_activity_types()
-            for category_data in AGENDA_CATEGORY_DEFAULTS:
-                category = AgendaCategory.query.filter_by(key=category_data['key']).first()
-                if not category:
-                    category = AgendaCategory(
-                        key=category_data['key'],
-                        label=category_data['label'],
-                        icon=category_data['icon'],
-                        badge_class=category_data['badge_class'],
-                        sort_order=category_data['sort_order'],
-                        attendance_required_for=category_data['required_for'],
-                        attendance_allowed_for=category_data['allowed_for'],
-                        show_presence_tracking=category_data['show_presence_tracking'],
-                    )
-                    db.session.add(category)
-            db.session.commit()
-            refresh_position_groups()
+                refresh_position_groups()
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
     return app
 
