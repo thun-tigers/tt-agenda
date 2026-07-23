@@ -33,10 +33,17 @@ def runner(app):
 
 @pytest.fixture
 def csrf_token(client):
-    def _csrf_token(path='/login'):
-        client.get(path)
+    def _csrf_token(path=None):
+        # /login leitet direkt zu tt-auth weiter und rendert kein Formular mehr,
+        # das ueber die Session ein CSRF-Token setzen wuerde. Token daher direkt
+        # in der Session ablegen, analog zu generate_csrf_token() in app/__init__.py.
         with client.session_transaction() as sess:
-            return sess['_csrf_token']
+            token = sess.get('_csrf_token')
+            if not token:
+                import secrets
+                token = secrets.token_urlsafe(32)
+                sess['_csrf_token'] = token
+            return token
     return _csrf_token
 
 @pytest.fixture

@@ -6,28 +6,28 @@
 <style>
     @keyframes live-pulse {
         0%, 100% {
-            border-color: rgb(239, 68, 68);
-            background-color: rgba(254, 226, 226, 1);
-            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7), inset 0 0 0 3px rgba(239, 68, 68, 0.5);
+            border-color: rgb(245, 158, 11);
+            background-color: rgba(254, 243, 199, 1);
+            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7), inset 0 0 0 3px rgba(245, 158, 11, 0.5);
         }
         50% {
-            border-color: rgb(220, 38, 38);
-            background-color: rgba(254, 202, 202, 1);
-            box-shadow: 0 0 30px 10px rgba(239, 68, 68, 0.8), inset 0 0 0 3px rgba(220, 38, 38, 0.8);
+            border-color: rgb(217, 119, 6);
+            background-color: rgba(253, 230, 138, 1);
+            box-shadow: 0 0 30px 10px rgba(245, 158, 11, 0.8), inset 0 0 0 3px rgba(217, 119, 6, 0.8);
         }
     }
-    
+
     @media (prefers-color-scheme: dark) {
         @keyframes live-pulse {
             0%, 100% {
-                border-color: rgb(239, 68, 68);
-                background-color: rgba(127, 29, 29, 0.6);
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7), inset 0 0 0 3px rgba(239, 68, 68, 0.5);
+                border-color: rgb(245, 158, 11);
+                background-color: rgba(120, 53, 15, 0.6);
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7), inset 0 0 0 3px rgba(245, 158, 11, 0.5);
             }
             50% {
-                border-color: rgb(220, 38, 38);
-                background-color: rgba(127, 29, 29, 0.9);
-                box-shadow: 0 0 30px 10px rgba(239, 68, 68, 0.8), inset 0 0 0 3px rgba(220, 38, 38, 0.8);
+                border-color: rgb(217, 119, 6);
+                background-color: rgba(120, 53, 15, 0.9);
+                box-shadow: 0 0 30px 10px rgba(245, 158, 11, 0.8), inset 0 0 0 3px rgba(217, 119, 6, 0.8);
             }
         }
     }
@@ -54,7 +54,7 @@
      hx-select="#live-training-widget"
      hx-swap="outerHTML">
     <!-- Header -->
-    <div class="{% if training_status == 'running' %}bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600{% else %}bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-700 dark:to-blue-700{% endif %} text-white px-3 py-1.5">
+    <div class="{% if training_status == 'running' %}bg-gradient-to-r from-amber-600 to-indigo-700 dark:from-amber-700 dark:to-indigo-800{% else %}bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900{% endif %} text-white px-3 py-1.5">
         <!-- Mobile Layout -->
         <div class="lg:hidden flex items-center justify-between gap-3">
             <!-- Left: Title, Date & Filter (stacked) -->
@@ -171,7 +171,7 @@
                     {% set is_next = training_status == 'running' and next_activity and next_activity.id == activity.id and not current_activity %}
                     {% set is_finished = activity.start_time < now.time() and activity_end_time <= now.time() and training_status == 'running' %}
                     
-                    <tr class="{% if is_current %}bg-red-50 dark:bg-red-900/30 border-4 border-red-500 live-row{% elif is_next %}bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500{% elif is_finished %}bg-green-50 dark:bg-green-900/30 opacity-60{% else %}hover:bg-slate-50 dark:hover:bg-slate-700/50{% endif %} transition">
+                    <tr class="{% if is_current %}bg-amber-50 dark:bg-amber-900/30 border-4 border-amber-500 live-row{% elif is_next %}bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500{% elif is_finished %}bg-green-50 dark:bg-green-900/30 opacity-60{% else %}hover:bg-slate-50 dark:hover:bg-slate-700/50{% endif %} transition">
                         <td class="px-3 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap">{{ activity.start_time.strftime('%H:%M') }}</td>
                         <td class="px-3 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap">{{ '%02d:%02d'|format(end_hour, end_min) }}</td>
                         <td class="px-2 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap">
@@ -219,7 +219,7 @@
                     {% set is_next = training_status == 'running' and next_activity and next_activity.id == activity.id and not current_activity %}
                     {% set is_finished = activity.start_time < now.time() and activity_end_time <= now.time() and training_status == 'running' %}
                     
-                    <tr class="{% if is_current %}bg-red-50 dark:bg-red-900/30 border-4 border-red-500 live-row{% elif is_next %}bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500{% elif is_finished %}bg-green-50 dark:bg-green-900/30 opacity-60{% else %}hover:bg-slate-50 dark:hover:bg-slate-700/50{% endif %} transition">
+                    <tr class="{% if is_current %}bg-amber-50 dark:bg-amber-900/30 border-4 border-amber-500 live-row{% elif is_next %}bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500{% elif is_finished %}bg-green-50 dark:bg-green-900/30 opacity-60{% else %}hover:bg-slate-50 dark:hover:bg-slate-700/50{% endif %} transition">
                         <td class="px-2 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap text-left">{{ activity.start_time.strftime('%H:%M') }}</td>
                         <td class="px-2 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap text-left">{{ '%02d:%02d'|format(end_hour, end_min) }}</td>
                         <td class="px-1 py-2 text-xs font-medium text-slate-900 dark:text-white whitespace-nowrap text-left hidden">{{ activity.duration }}</td>

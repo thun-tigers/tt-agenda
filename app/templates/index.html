@@ -15,31 +15,28 @@
 {% if current_training %}
 <div class="mb-8">
     {% if training_status == 'running' %}
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 shadow-2xl">
-        <div class="absolute inset-0 opacity-10">
-            <div class="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-            <div class="absolute bottom-0 right-0 w-40 h-40 bg-white rounded-full translate-x-1/2 translate-y-1/2"></div>
-        </div>
+    <div class="relative overflow-hidden rounded-2xl shadow-2xl" style="background: linear-gradient(120deg, #702080 0%, #83259e 55%, #a03e17 130%);">
+        <div class="absolute inset-0 opacity-25" style="background: radial-gradient(circle at 85% 15%, rgba(245,158,11,.55), transparent 55%);"></div>
         <div class="relative px-4 sm:px-8 py-6 sm:py-10">
             <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
-                        <span class="inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 bg-red-500 dark:bg-red-400 rounded-full animate-pulse">
-                            <span class="w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full"></span>
+                        <span class="relative inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full" style="background: rgba(245,158,11,.3); border: 1px solid rgba(245,158,11,.6);">
+                            <span class="w-2 h-2 sm:w-3 sm:h-3 rounded-full animate-pulse" style="background: #f59e0b;"></span>
                         </span>
-                        <p class="text-red-100 text-xs sm:text-sm font-semibold uppercase tracking-wide">LÄUFT JETZT</p>
+                        <p class="text-xs sm:text-sm font-semibold uppercase tracking-wide" style="color: #fde68a;">LÄUFT JETZT</p>
                     </div>
                     <h2 class="text-2xl sm:text-4xl font-bold text-white mb-2">{{ current_training.name }}</h2>
-                    <p class="text-red-100">Training läuft gerade – Klicke auf "Live-Ansicht" um zu sehen!</p>
+                    <p class="text-white/80">Training läuft gerade – Klicke auf "Live-Ansicht" um zu sehen!</p>
                 </div>
-                <a href="{{ url_for('main.live') }}" class="w-full sm:w-auto px-6 py-3 bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 font-semibold rounded-lg text-center hover:shadow-lg hover:scale-105 transition">
+                <a href="{{ url_for('main.live') }}" class="w-full sm:w-auto px-6 py-3 bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-semibold rounded-lg text-center hover:shadow-lg hover:scale-105 transition">
                     <i class="bi bi-broadcast mr-2"></i>Live-Ansicht
                 </a>
             </div>
         </div>
     </div>
     {% else %}
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 ring-1 ring-indigo-400/20 dark:ring-indigo-400/15 shadow-lg shadow-indigo-950/20">
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 ring-1 ring-indigo-400/20 dark:ring-indigo-400/15 shadow-lg shadow-indigo-950/20">
         <div class="absolute inset-0 opacity-10">
             <div class="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
         </div>
@@ -72,13 +69,13 @@
     
     <div class="tt-status-timeline grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
         {% for item in upcoming_trainings %}
-        {% set card_variant = 'danger' if item.is_running else ('warning' if item.is_individual else ('success' if item.is_free else 'info')) %}
+        {% set card_variant = 'live' if item.is_running else ('warning' if item.is_individual else ('success' if item.is_free else 'info')) %}
         {% call status_card(card_variant, url_for('main.live', training_id=item.training.id, date=item.date.strftime('%Y-%m-%d')), extra_classes='group p-4 sm:p-6') %}
                     <!-- Status Badge -->
                     <div class="mb-4 flex gap-2 flex-wrap">
                         {% if item.is_running %}
-                        <span class="inline-flex items-center gap-1 px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-semibold rounded-full">
-                            <span class="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                        <span class="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-semibold rounded-full">
+                            <span class="inline-block w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
                             LÄUFT JETZT
                         </span>
                         {% elif item.is_upcoming %}

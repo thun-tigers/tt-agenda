@@ -2,7 +2,7 @@ import logging
 import secrets
 
 import jwt
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, redirect, request, session, url_for
 from werkzeug.security import generate_password_hash
 
 from tt_common.sso import get_auth_login_url, get_auth_logout_url, is_safe_url
@@ -16,17 +16,12 @@ bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
 
 
-@bp.route('/login', methods=['GET', 'POST'])
-@limiter.limit("20/minute", methods=["POST"])
+@bp.route('/login')
 def login():
     next_page = request.args.get('next')
     if next_page and not is_safe_url(next_page):
         next_page = None
-    auth_login_url = get_auth_login_url('tt-agenda', next_page)
-    if request.method == 'POST':
-        flash('Die Anmeldung erfolgt zentral über tt-auth.', 'info')
-        return redirect(auth_login_url)
-    return render_template('login.html', auth_login_url=auth_login_url, next_page=next_page)
+    return redirect(get_auth_login_url('tt-agenda', next_page))
 
 
 @bp.route('/logout', methods=['POST'])
