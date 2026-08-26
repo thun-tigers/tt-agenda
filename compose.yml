@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "${PLANNING_PORT:-8080}:5000"
+      - "${AGENDA_PORT:-8080}:5000"
     environment:
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY muss gesetzt sein}
       SQLALCHEMY_DATABASE_URI: postgresql+psycopg://tt_agenda:${POSTGRES_PASSWORD:-tt_agenda_dev}@db:5432/tt_agenda
@@ -14,7 +14,7 @@ services:
       AUTO_CREATE_DB: "true"
       TZ: Europe/Zurich
     volumes:
-      - planning-instance:/app/instance
+      - agenda-instance:/app/instance
     depends_on:
       db:
         condition: service_healthy
@@ -26,7 +26,7 @@ services:
       POSTGRES_USER: tt_agenda
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tt_agenda_dev}
     volumes:
-      - planning-db:/var/lib/postgresql/data
+      - agenda-db:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U tt_agenda -d tt_agenda"]
       interval: 5s
@@ -35,5 +35,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  planning-instance:
-  planning-db:
+  agenda-instance:
+  agenda-db:
