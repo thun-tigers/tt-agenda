@@ -39,34 +39,17 @@ Standardpasswort gibt es nicht. Für jede echte Umgebung müssen zusätzlich
 `SECRET_KEY` und bei Nutzung der internen API `INTERNAL_API_SECRET` gesetzt
 werden.
 
-## Docker
-
-```bash
-docker compose up -d --build
-```
-
-Die Anwendung läuft dann unter <http://127.0.0.1:8080>.
-
-Beim Docker-Build wird Tailwind CSS in einer separaten Node-Buildstufe aus den
-Templates und Python-Dateien kompiliert. Das Laufzeit-Image enthält nur die
-fertige CSS-Datei und benötigt kein Node.js. Für einen lokalen Frontend-Build:
-
-```bash
-npm ci
-npm run build:css
-```
-
-Die Tailwind-Versionen sind in `package.json` und `package-lock.json` festgelegt.
-Neue dynamisch zusammengesetzte CSS-Klassen müssen in der Tailwind-Konfiguration
-ergänzt oder per Safelist eingetragen werden.
-
 ## Tests
 
 ```bash
 python -m pytest -q
 ```
 
-## Datenbestand
+## Dokumentation
 
-Für den lokalen Neustart ist keine Datenmigration erforderlich. Die alten
-Repositories bleiben unabhängig davon unverändert.
+Weiterführende Dokumentation liegt unter [`docs/`](docs/):
+
+- [Deployment](docs/deployment.md) – Docker Compose, Umgebungsvariablen, Produktion, Troubleshooting
+- [PWA-Setup](docs/pwa.md) – Manifest, Service Worker, Installation auf Mobilgeräten
+- [Backlog](docs/backlog.md) – geplante Themen und Prioritäten
+- [GHCR-Cleanup](docs/ghcr-cleanup.md) – alte Container-Image-Versionen löschen
