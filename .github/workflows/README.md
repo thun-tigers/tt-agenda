@@ -1,157 +1,72 @@
-# GitHub Actions - Docker Build
+# GitHub Actions - Manual Docker Image Build
 
 ## Übersicht
 
-Diese GitHub Action baut automatisch ein Docker Image und speichert es in der GitHub Container Registry (ghcr.io).
+Der Workflow `manual-docker-build.yml` baut auf Anfrage ein Docker Image und
+veröffentlicht es in der GitHub Container Registry (ghcr.io). Es gibt keinen
+automatischen Trigger (kein Build bei jedem Push) – der Build muss bewusst
+gestartet werden.
 
-## Manueller Trigger
+## Workflow starten
 
-### Über GitHub UI:
+### Über GitHub UI
 
-1. Gehe zu deinem Repository auf GitHub
-2. Klicke auf **"Actions"** Tab
-3. Wähle **"Docker Build and Push"** aus der Liste
-4. Klicke auf **"Run workflow"** (rechts)
-5. Wähle den Branch (z.B. `main`)
-6. Gib einen Tag ein (z.B. `v1.0.0`, `latest`, `dev`)
-7. Klicke auf **"Run workflow"**
+1. Repository auf GitHub öffnen → Tab **"Actions"**
+2. Workflow **"Manual Docker Image Build"** auswählen
+3. **"Run workflow"** klicken
+4. Branch wählen (z. B. `main`) und einen Tag eingeben (z. B. `v1.0.0`, `latest`, `dev`)
+5. **"Run workflow"** bestätigen
 
-### Über GitHub CLI:
+### Über GitHub CLI
 
 ```bash
-# Installiere GitHub CLI (falls noch nicht installiert)
-brew install gh
-
-# Login
 gh auth login
-
-# Workflow manuell triggern
-gh workflow run "Docker Build and Push" \
+gh workflow run "Manual Docker Image Build" \
   --ref main \
   -f tag=v1.0.0
 ```
 
 ## Image verwenden
 
-### 1. Login bei GitHub Container Registry
+### Login bei GHCR
 
 ```bash
-# Personal Access Token erstellen:
-# GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
-# Scope: read:packages
-
+# Personal Access Token mit Scope "read:packages" erstellen:
+# GitHub → Settings → Developer settings → Personal access tokens
 echo "YOUR_GITHUB_TOKEN" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
 ```
 
-### 2. Image pullen
+### Image pullen und starten
 
 ```bash
-# Ersetze USERNAME und REPO mit deinen Werten
-docker pull ghcr.io/USERNAME/REPO:latest
-
-# Oder mit spezifischem Tag
-docker pull ghcr.io/USERNAME/REPO:v1.0.0
-```
-
-### 3. Container starten
-
-```bash
-docker run -d \
-  --name tt-agenda \
-  -p 5000:5000 \
-  -v $(pwd)/instance:/app/instance \
-  ghcr.io/USERNAME/REPO:latest
-```
-
-### 4. Mit Docker Compose
-
-Erstelle eine `docker-compose.prod.yml`:
-
-```yaml
-version: '3.8'
-
-services:
-  web:
-    image: ghcr.io/USERNAME/REPO:latest
-    container_name: tt-agenda
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./instance:/app/instance
-    environment:
-      - FLASK_ENV=production
-    restart: unless-stopped
-```
-
-Dann starten:
-```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker pull ghcr.io/thun-tigers/tt-agenda:v1.0.0
+docker run -d --name tt-agenda -p 8080:5000 ghcr.io/thun-tigers/tt-agenda:v1.0.0
 ```
 
 ## Image-Sichtbarkeit einstellen
 
-Standardmäßig sind Images privat. Um sie öffentlich zu machen:
+Standardmässig sind GHCR-Images privat. Öffentlich machen:
+Repository → **Packages** → Package auswählen → **Package settings** →
+**Danger Zone** → **Change visibility**.
 
-1. Gehe zu deinem Repository auf GitHub
-2. Klicke rechts auf **"Packages"**
-3. Wähle dein Package aus
-4. Klicke auf **"Package settings"**
-5. Scrolle zu **"Danger Zone"**
-6. Klicke auf **"Change visibility"**
-7. Wähle **"Public"** oder **"Private"**
+## Voraussetzungen im Repository
 
-## Automatischer Build (Optional)
+Repository → Settings → Actions → General → **Workflow permissions**:
+**"Read and write permissions"** (nötig, damit der Workflow nach ghcr.io pushen darf).
 
-Um den Build automatisch bei jedem Push auf `main` zu triggern, entferne die Kommentare in `.github/workflows/docker-build.yml`:
+## Plattformen
 
-```yaml
-on:
-  workflow_dispatch:
-    # ...
-  
-  push:  # ← Entferne Kommentar
-    branches:
-      - main
-    tags:
-      - 'v*'
-```
-
-## Tags
-
-Die Action erstellt automatisch mehrere Tags:
-
-- **Manueller Input**: Der von dir eingegebene Tag (z.B. `v1.0.0`)
-- **Branch**: Der Branch-Name (z.B. `main`)
-- **SHA**: Git Commit SHA (z.B. `main-abc1234`)
-
-## Multi-Platform Support
-
-Das Image wird für folgende Plattformen gebaut:
-- `linux/amd64` (Intel/AMD CPUs)
-- `linux/arm64` (ARM CPUs, z.B. Apple Silicon, Raspberry Pi)
+Das Image wird für `linux/amd64` und `linux/arm64` gebaut.
 
 ## Troubleshooting
 
-### "Permission denied" beim Pushen
-
-Stelle sicher, dass die Action die richtigen Permissions hat:
-- Repository → Settings → Actions → General → Workflow permissions
-- Wähle: **"Read and write permissions"**
-
-### Image nicht gefunden
-
-1. Prüfe ob der Build erfolgreich war: Actions Tab
-2. Prüfe die Package-Sichtbarkeit (siehe oben)
-3. Stelle sicher, dass du eingeloggt bist: `docker login ghcr.io`
-
-### Build schlägt fehl
-
-1. Prüfe die Logs im Actions Tab
-2. Teste den Build lokal: `docker build -t test .`
-3. Prüfe ob alle Dependencies in `requirements.txt` sind
+| Problem | Lösung |
+| --- | --- |
+| "Permission denied" beim Push | Workflow-Permissions wie oben prüfen |
+| Image nicht sichtbar/pullbar | Package-Sichtbarkeit prüfen, `docker login ghcr.io` erneut ausführen |
+| Build schlägt fehl | Logs im Actions-Tab prüfen, lokal testen: `docker build -t test .` |
 
 ## Weitere Informationen
 
 - [GitHub Container Registry Dokumentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
-- [GitHub Actions Dokumentation](https://docs.github.com/en/actions)
 - [Docker Build Push Action](https://github.com/docker/build-push-action)

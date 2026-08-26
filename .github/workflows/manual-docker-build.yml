@@ -1,4 +1,4 @@
-name: Manual Image Build
+name: Manual Docker Image Build
 
 on:
   workflow_dispatch:
@@ -7,11 +7,6 @@ on:
         description: "Image tag to publish (e.g. v0.1.19, beta, hotfix)"
         required: true
         default: dev
-        type: string
-      tt_common_tag:
-        description: "tt-common base image tag (latest, beta, v0.1.19)"
-        required: false
-        default: latest
         type: string
 
 env:
@@ -72,7 +67,6 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.prepare.outputs.image_ref }}
-          build-args: TT_COMMON_TAG=${{ github.event.inputs.tt_common_tag || 'latest' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
@@ -83,6 +77,5 @@ jobs:
           echo "## Manual build published" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- Image: \`${{ steps.prepare.outputs.image_ref }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- tt-common base: \`${{ github.event.inputs.tt_common_tag || 'latest' }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Digest: \`${{ steps.build.outputs.digest }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Commit: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
