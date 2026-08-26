@@ -1,5 +1,5 @@
 {
-  "name": "tt-planning",
+  "name": "tt-agenda",
   "private": true,
   "scripts": {
     "build:css": "tailwindcss -i ./app/static/css/tailwind.css -o ./app/static/css/tailwind.generated.css --minify"

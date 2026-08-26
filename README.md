@@ -1,4 +1,4 @@
-# tt-planning
+# tt-agenda
 
 Ein einfacher Single-Service für die Thun Tigers: Anmeldung, Benutzerprofile,
 Team-Mitgliedschaften und Trainingsagenda in einer Anwendung.

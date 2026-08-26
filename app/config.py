@@ -10,7 +10,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = (
         os.environ.get('SQLALCHEMY_DATABASE_URI')
         or os.environ.get('DATABASE_URL')
-        or 'sqlite:///instance/tt_planning.db'
+        or 'sqlite:///instance/tt_agenda.db'
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get('SECRET_KEY')

@@ -31,4 +31,4 @@ def test_navigation_has_no_external_messages_dependency(client, app, monkeypatch
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert 'tt-planning' in html
+    assert 'tt-agenda' in html
