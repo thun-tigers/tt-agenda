@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% set active_tab = "trainings" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-6 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="h-11 w-11 rounded-full bg-indigo-600/15 text-indigo-600 dark:text-indigo-200 flex items-center justify-center">
+                <i class="bi bi-tags"></i>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Admin</p>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Aktivitätstypen</h1>
+                <p class="text-sm text-slate-600 dark:text-slate-400">Verwalten Sie Labels, Verhalten und Farben der Aktivitätstypen.</p>
+            </div>
+        </div>
+        <a href="{{ url_for('main.index') }}" class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition text-sm font-semibold inline-flex items-center gap-2">
+            <i class="bi bi-arrow-left"></i> Übersicht
+        </a>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-md p-6">
+        <form method="POST" action="{{ url_for('admin.admin_activity_types') }}" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="overflow-x-auto">
+                <table class="js-smart-table w-full text-sm">
+                    <thead class="bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold">Key</th>
+                            <th class="px-4 py-3 text-left font-semibold">Label</th>
+                            <th class="px-4 py-3 text-left font-semibold">Verhalten</th>
+                            <th class="px-4 py-3 text-left font-semibold">Badge-Klasse</th>
+                            <th class="px-4 py-3 text-left font-semibold">Light Color</th>
+                            <th class="px-4 py-3 text-left font-semibold">Dark Color</th>
+                            <th class="px-4 py-3 text-left font-semibold">Reihenfolge</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                        {% for at in activity_types %}
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition">
+                            <td class="px-4 py-3 font-mono text-slate-700 dark:text-slate-200">{{ at.key }}</td>
+                            <td class="px-4 py-3">
+                                <input type="text" name="label_{{ at.key }}" value="{{ at.label }}" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" aria-label="Label {{ at.key }}">
+                            </td>
+                            <td class="px-4 py-3">
+                                <input type="text" name="behavior_{{ at.key }}" value="{{ at.behavior }}" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" aria-label="Verhalten {{ at.key }}">
+                            </td>
+                            <td class="px-4 py-3">
+                                <input type="text" name="badge_class_{{ at.key }}" value="{{ at.badge_class }}" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" aria-label="Badge Klasse {{ at.key }}">
+                            </td>
+                            <td class="px-4 py-3">
+                                <input type="color" name="light_color_{{ at.key }}" value="{{ at.light_color }}" class="h-10 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700" aria-label="Light Color {{ at.key }}">
+                            </td>
+                            <td class="px-4 py-3">
+                                <input type="color" name="dark_color_{{ at.key }}" value="{{ at.dark_color }}" class="h-10 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700" aria-label="Dark Color {{ at.key }}">
+                            </td>
+                            <td class="px-4 py-3 w-28">
+                                <input type="number" name="sort_order_{{ at.key }}" value="{{ at.sort_order }}" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" aria-label="Reihenfolge {{ at.key }}">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" class="tt-primary-button inline-flex items-center gap-2 px-6 py-2 text-white font-semibold rounded-lg transition transform hover:scale-105 shadow">
+                    <i class="bi bi-check-circle"></i>
+                    Änderungen speichern
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

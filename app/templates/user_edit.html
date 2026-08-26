@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Benutzer bearbeiten · tt-planning{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-2xl">
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <h1 class="text-2xl font-bold tracking-tight">{{ user.full_name }}</h1>
+    <p class="mt-1 text-sm text-slate-500">{{ user.username }}</p>
+    <form method="post" class="mt-6 grid gap-5 sm:grid-cols-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div><label class="mb-1.5 block text-sm font-medium text-slate-700">Vorname</label><input class="w-full rounded-xl border border-slate-300 px-4 py-2.5" name="first_name" value="{{ user.first_name or '' }}"></div>
+      <div><label class="mb-1.5 block text-sm font-medium text-slate-700">Nachname</label><input class="w-full rounded-xl border border-slate-300 px-4 py-2.5" name="last_name" value="{{ user.last_name or '' }}"></div>
+      <div><label class="mb-1.5 block text-sm font-medium text-slate-700">E-Mail</label><input class="w-full rounded-xl border border-slate-300 px-4 py-2.5" name="email" value="{{ user.email or '' }}"></div>
+      <div><label class="mb-1.5 block text-sm font-medium text-slate-700">Rolle</label><select class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5" name="role"><option value="user" {% if user.role != 'admin' %}selected{% endif %}>Benutzer</option><option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option></select></div>
+      <div><label class="mb-1.5 block text-sm font-medium text-slate-700">Status</label><select class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5" name="account_status"><option value="pending" {% if user.account_status == 'pending' %}selected{% endif %}>Wartet auf Freigabe</option><option value="active" {% if user.account_status == 'active' %}selected{% endif %}>Aktiv</option><option value="suspended" {% if user.account_status == 'suspended' %}selected{% endif %}>Gesperrt</option></select></div>
+      <div class="flex items-end"><button class="rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white" type="submit">Speichern</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

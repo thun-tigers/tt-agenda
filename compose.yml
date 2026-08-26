@@ -1,0 +1,39 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${PLANNING_PORT:-8080}:5000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY muss gesetzt sein}
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg://tt_planning:${POSTGRES_PASSWORD:-tt_planning_dev}@db:5432/tt_planning
+      DEFAULT_ADMIN_USERNAME: ${DEFAULT_ADMIN_USERNAME:-admin}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:?DEFAULT_ADMIN_PASSWORD muss gesetzt sein}
+      PUSHOVER_TOKEN: ${PUSHOVER_TOKEN:-}
+      PUSHOVER_USER: ${PUSHOVER_USER:-}
+      PUSHOVER_URL: ${PUSHOVER_URL:-https://api.pushover.net/1/messages.json}
+      AUTO_CREATE_DB: "true"
+      TZ: Europe/Zurich
+    volumes:
+      - planning-instance:/app/instance
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tt_planning
+      POSTGRES_USER: tt_planning
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tt_planning_dev}
+    volumes:
+      - planning-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tt_planning -d tt_planning"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  planning-instance:
+  planning-db:

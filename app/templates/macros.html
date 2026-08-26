@@ -1,0 +1,5 @@
+{% macro status_card(variant, href, extra_classes='') %}
+<a href="{{ href }}" class="group block h-full rounded-xl border border-slate-200 bg-white text-slate-900 no-underline shadow-none transition hover:border-indigo-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 {{ extra_classes }}">
+  <div>{{ caller() }}</div>
+</a>
+{% endmacro %}

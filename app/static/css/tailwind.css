@@ -1,0 +1,79 @@
+@tailwind components;
+@tailwind utilities;
+
+/* Tailwind Preflight ist bewusst deaktiviert; diese grundlegende Regel bleibt
+   trotzdem nötig, damit Inputs mit width: 100% nicht aus dem Grid laufen. */
+*,
+::before,
+::after {
+  box-sizing: border-box;
+}
+
+/* Einheitlicher, flacher Button-Stil für alle Form-Aktionen. */
+button {
+  border-radius: .625rem;
+  box-shadow: none !important;
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
+}
+button:hover {
+  box-shadow: none !important;
+  transform: translateY(-1px) !important;
+}
+button:active {
+  transform: translateY(0) !important;
+}
+
+/* Shared fallback surfaces for the identity pages, which intentionally keep
+   their compact utility markup without duplicating every dark: class. */
+html.dark .bg-white { background-color: #1e293b; }
+html.dark .bg-slate-50 { background-color: #0f172a; }
+html.dark .bg-slate-100 { background-color: #1e293b; }
+html.dark .text-slate-900 { color: #f8fafc; }
+html.dark .text-slate-800 { color: #f1f5f9; }
+html.dark .text-slate-700 { color: #cbd5e1; }
+html.dark .text-slate-600 { color: #cbd5e1; }
+html.dark .text-slate-500 { color: #94a3b8; }
+html.dark .border-slate-200 { border-color: #334155; }
+html.dark .border-slate-300 { border-color: #475569; }
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #334155; }
+html.dark .hover\:bg-slate-50:hover { background-color: #334155; }
+html.dark input,
+html.dark select { color-scheme: dark; }
+
+.tt-form-input {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: .75rem;
+  background: #ffffff;
+  color: #0f172a;
+  padding: .75rem 1rem;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+.tt-form-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, .16);
+}
+html.dark .tt-form-input {
+  border-color: #475569;
+  background: #1e293b;
+  color: #f8fafc;
+  color-scheme: dark;
+}
+.tt-primary-button {
+  border: 0 !important;
+  background: #6366f1 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+.tt-primary-button:hover {
+  background: #4f46e5 !important;
+  box-shadow: none !important;
+}
+
+.tt-form-card {
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+}

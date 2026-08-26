@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% set active_tab = "trainings" %}
+
+{% block content %}
+<div class="mb-6 sm:mb-8">
+    <h1 class="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white flex items-center gap-2 sm:gap-3">
+        <div class="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
+            <i class="bi bi-plus-circle text-indigo-600 dark:text-indigo-400 text-lg sm:text-xl"></i>
+        </div>
+        Neues Training erstellen
+    </h1>
+</div>
+
+<div class="tt-form-card bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div class="p-4 sm:p-8">
+        <form method="POST" id="training-form" class="space-y-4 sm:space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <!-- Name und Wochentag -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                <div class="md:col-span-2">
+                    <label for="name" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        <i class="bi bi-tag mr-2"></i>Trainingsname
+                    </label>
+                    <input 
+                        type="text" 
+                        id="name"
+                        name="name" 
+                        class="tt-form-input placeholder-slate-500 dark:placeholder-slate-400"
+                        placeholder="z.B. Grundtraining"
+                        required
+                    >
+                </div>
+                
+                <div>
+                    <label for="weekday" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        <i class="bi bi-calendar3 mr-2"></i>Wochentag
+                    </label>
+                    <select 
+                        id="weekday"
+                        name="weekday" 
+                        class="tt-form-input"
+                        required
+                    >
+                        {% for i in range(7) %}
+                        <option value="{{ i }}">{{ weekdays[i] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            <div>
+                <label for="category" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        <i class="bi bi-bookmark mr-2"></i>Kategorie
+                    </label>
+                    <select id="category" name="category" required
+                            class="tt-form-input">
+                        <option value="training">Training</option>
+                        <option value="game">Saison-Spiel</option>
+                        <option value="event">Event</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Start-/Endzeit -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                <div>
+                    <label for="start_time" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        <i class="bi bi-clock mr-2"></i>Startzeit
+                    </label>
+                    <input 
+                        type="time" 
+                        id="start_time"
+                        name="start_time" 
+                        class="tt-form-input"
+                        required
+                    >
+                </div>
+                
+                <div>
+                    <label for="end_time" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        <i class="bi bi-clock-history mr-2"></i>Endzeit
+                    </label>
+                    <input 
+                        type="time" 
+                        id="end_time"
+                        name="end_time" 
+                        class="tt-form-input"
+                        required
+                    >
+                </div>
+            </div>
+            
+            <!-- Datumsbereich -->
+            <div>
+                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
+                    <i class="bi bi-calendar-range"></i>Zeitraum
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-2">
+                            Startdatum
+                        </label>
+                        <input 
+                            type="date" 
+                            id="start_date"
+                            name="start_date" 
+                            class="tt-form-input"
+                            required
+                        >
+                    </div>
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-2">
+                            Enddatum
+                        </label>
+                        <input 
+                            type="date" 
+                            id="end_date"
+                            name="end_date" 
+                            class="tt-form-input"
+                            required
+                        >
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 pt-4 sm:pt-6 border-t border-slate-200 dark:border-slate-700">
+                <button 
+                    type="submit" 
+                    class="tt-primary-button sm:flex-1 px-6 py-3 font-semibold rounded-lg transition flex items-center justify-center gap-2"
+                >
+                    <i class="bi bi-save"></i>Speichern
+                </button>
+                <a 
+                    href="{{ url_for('main.index') }}" 
+                    class="sm:flex-1 px-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 font-semibold rounded-lg transition flex items-center justify-center gap-2"
+                >
+                    <i class="bi bi-x-circle"></i>Abbrechen
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(() => {
+    const form = document.getElementById('training-form');
+    const key = 'tt-planning.training-form-draft';
+    const fields = ['name', 'weekday', 'category', 'start_time', 'end_time', 'start_date', 'end_date'];
+    if (!form) return;
+
+    const saveDraft = () => {
+        try {
+            const draft = Object.fromEntries(fields.map((name) => [name, form.elements[name]?.value || '']));
+            localStorage.setItem(key, JSON.stringify(draft));
+        } catch (_) {
+            // Lokale Entwürfe sind Komfortfunktion und dürfen das Formular nie blockieren.
+        }
+    };
+
+    try {
+        const draft = JSON.parse(localStorage.getItem(key) || 'null');
+        if (draft) fields.forEach((name) => {
+            if (draft[name] && form.elements[name]) form.elements[name].value = draft[name];
+        });
+    } catch (_) {
+        // Beschädigte oder nicht verfügbare lokale Daten werden ignoriert.
+    }
+
+    form.addEventListener('input', saveDraft);
+    form.addEventListener('change', saveDraft);
+})();
+</script>
+{% endblock %}

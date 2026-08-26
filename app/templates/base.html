@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="de" class="min-h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}tt-planning{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.generated.css') }}">
+  <script>
+    (() => {
+      const saved = localStorage.getItem('tt-theme');
+      const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.toggle('dark', dark);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    })();
+  </script>
+  <script src="https://unpkg.com/htmx.org@1.9.13"></script>
+  {% block head_extra %}{% endblock %}
+  <style>
+    {% block head_style %}{% endblock %}
+
+    /* Keep interactive controls flat and consistent across Tailwind templates. */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="date"],
+    input[type="time"],
+    input[type="number"],
+    select,
+    textarea,
+    .form-control,
+    .form-select {
+      border-width: 1px !important;
+      border-style: solid !important;
+      border-color: #cbd5e1 !important;
+      border-radius: 0.5rem !important;
+      box-shadow: none !important;
+      background-image: none;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="date"]:focus,
+    input[type="time"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus,
+    .form-control:focus,
+    .form-select:focus {
+      border-color: #6366f1 !important;
+      box-shadow: 0 0 0 1px #6366f1 !important;
+      outline: none !important;
+    }
+
+    button,
+    .btn {
+      border-width: 1px !important;
+      border-style: solid !important;
+      box-shadow: none !important;
+      transform: none !important;
+      background-image: none !important;
+    }
+
+    button:hover,
+    .btn:hover {
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    [data-theme="dark"] input[type="text"],
+    [data-theme="dark"] input[type="email"],
+    [data-theme="dark"] input[type="password"],
+    [data-theme="dark"] input[type="date"],
+    [data-theme="dark"] input[type="time"],
+    [data-theme="dark"] input[type="number"],
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea,
+    [data-theme="dark"] .form-control,
+    [data-theme="dark"] .form-select {
+      border-color: #475569 !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+  <nav class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 lg:px-8">
+      <a class="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight text-indigo-600 no-underline" href="{{ url_for('main.index') }}">
+        <i class="bi bi-calendar2-heart text-xl"></i><span>tt-planning</span>
+      </a>
+      {% if session.get('user_id') %}
+      <div class="hidden items-center gap-1 md:flex">
+        <a class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-indigo-300 no-underline" href="{{ url_for('main.index') }}">Übersicht</a>
+        <a class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-indigo-300 no-underline" href="{{ url_for('main.live') }}">Live</a>
+        {% if can_manage_agenda() %}
+        <a class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-indigo-300 no-underline" href="{{ url_for('admin.admin_trainings') }}">Agenda verwalten</a>
+        <a class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-indigo-300 no-underline" href="{{ url_for('users.index') }}">Benutzer</a>
+        {% endif %}
+      </div>
+      <div class="flex items-center gap-2 sm:gap-4">
+        <a class="hidden items-center gap-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-300 no-underline sm:flex" href="{{ url_for('auth.profile') }}"><i class="bi bi-person-circle"></i>{{ session.get('display_name', session.get('username')) }}</a>
+        <button id="theme-toggle" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500 dark:hover:text-indigo-300" aria-label="Darkmode umschalten" title="Darkmode umschalten"><i class="bi bi-moon-stars"></i></button>
+        <form method="post" action="{{ url_for('auth.logout') }}" class="m-0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Abmelden</button></form>
+      </div>
+      {% endif %}
+    </div>
+  </nav>
+  <main class="mx-auto min-h-[calc(100vh-11rem)] max-w-7xl px-4 py-8 lg:px-8">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div class="mb-4 flex items-center justify-between rounded-xl border px-4 py-3 text-sm {% if category == 'danger' %}border-red-200 bg-red-50 text-red-800{% elif category == 'success' %}border-emerald-200 bg-emerald-50 text-emerald-800{% elif category == 'warning' %}border-amber-200 bg-amber-50 text-amber-800{% else %}border-sky-200 bg-sky-50 text-sky-800{% endif %}" role="alert">
+        <span>{{ message }}</span><button type="button" class="ml-4 text-current opacity-60 hover:opacity-100" onclick="this.parentElement.remove()" aria-label="Meldung schliessen"><i class="bi bi-x-lg"></i></button>
+      </div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="border-t border-slate-200 px-4 py-6 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400"><div class="mx-auto max-w-7xl lg:px-4">Thun Tigers · tt-planning</div></footer>
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const button = document.getElementById('theme-toggle');
+      if (!button) return;
+      const icon = button.querySelector('i');
+      const update = (dark) => {
+        root.classList.toggle('dark', dark);
+        root.dataset.theme = dark ? 'dark' : 'light';
+        localStorage.setItem('tt-theme', dark ? 'dark' : 'light');
+        icon.className = dark ? 'bi bi-sun' : 'bi bi-moon-stars';
+        button.title = dark ? 'Hellmodus aktivieren' : 'Darkmode aktivieren';
+      };
+      update(root.classList.contains('dark'));
+      button.addEventListener('click', () => update(!root.classList.contains('dark')));
+    })();
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

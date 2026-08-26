@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% set active_tab = "trainings" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-indigo-600/15 text-indigo-600 dark:text-indigo-200 flex items-center justify-center flex-shrink-0">
+                <i class="bi bi-tags"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Admin</p>
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Aktivitätstypen</h1>
+                <p class="text-sm text-slate-600 dark:text-slate-400 hidden sm:block">Verwalten Sie Labels, Verhalten und Farben der Aktivitätstypen.</p>
+            </div>
+        </div>
+        <a href="{{ url_for('admin.admin_trainings') }}" class="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition text-sm font-semibold inline-flex items-center justify-center gap-2 w-full sm:w-auto">
+            <i class="bi bi-arrow-left"></i> <span class="sm:inline">Zur Verwaltung</span>
+        </a>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-md p-4 sm:p-6">
+        <form method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Desktop Table View -->
+            <div class="hidden lg:block overflow-x-auto">
+                <table class="js-smart-table w-full text-sm">
+                    <thead class="bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white">
+                        <tr>
+                            <th class="px-3 xl:px-4 py-3 text-left font-semibold">Schlüssel</th>
+                            <th class="px-3 xl:px-4 py-3 text-left font-semibold">Label</th>
+                            <th class="px-3 xl:px-4 py-3 text-left font-semibold">Verhalten</th>
+                            <th class="px-3 xl:px-4 py-3 text-left font-semibold">Badge</th>
+                            <th class="px-3 xl:px-4 py-3 text-left font-semibold">Hell</th>
+                            <th class="px-3 xl:px-4 py-3 text-left font-semibold">Dunkel</th>
+                            <th class="px-3 xl:px-4 py-3 text-left font-semibold">Reihenf.</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                        {% for activity_type in activity_types %}
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition">
+                            <td class="px-3 xl:px-4 py-3 font-mono text-xs text-slate-700 dark:text-slate-200">{{ activity_type.key }}</td>
+                            <td class="px-3 xl:px-4 py-3">
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                       name="label_{{ activity_type.key }}"
+                                       value="{{ activity_type.label }}"
+                                       required>
+                            </td>
+                            <td class="px-3 xl:px-4 py-3">
+                                <select class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" name="behavior_{{ activity_type.key }}" required>
+                                    <option value="team" {% if activity_type.behavior == 'team' %}selected{% endif %}>Team</option>
+                                    <option value="individual" {% if activity_type.behavior == 'individual' %}selected{% endif %}>Individual</option>
+                                    <option value="group" {% if activity_type.behavior == 'group' %}selected{% endif %}>Group</option>
+                                </select>
+                            </td>
+                            <td class="px-3 xl:px-4 py-3">
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                       name="badge_class_{{ activity_type.key }}"
+                                       value="{{ activity_type.badge_class }}"
+                                       required>
+                            </td>
+                            <td class="px-3 xl:px-4 py-3">
+                                <input type="color"
+                                       class="h-9 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 cursor-pointer"
+                                       name="light_color_{{ activity_type.key }}"
+                                       value="{{ activity_type.light_color }}"
+                                       title="Hell">
+                            </td>
+                            <td class="px-3 xl:px-4 py-3">
+                                <input type="color"
+                                       class="h-9 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 cursor-pointer"
+                                       name="dark_color_{{ activity_type.key }}"
+                                       value="{{ activity_type.dark_color }}"
+                                       title="Dunkel">
+                            </td>
+                            <td class="px-3 xl:px-4 py-3 w-20">
+                                <input type="number"
+                                       class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-right"
+                                       name="sort_order_{{ activity_type.key }}"
+                                       value="{{ activity_type.sort_order }}"
+                                       min="0"
+                                       step="1"
+                                       required>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile/Tablet Card View -->
+            <div class="lg:hidden space-y-4">
+                {% for activity_type in activity_types %}
+                <div class="bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-xl p-4">
+                    <!-- Header mit Schlüssel -->
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-600">
+                        <span class="font-mono text-xs px-2 py-1 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded">{{ activity_type.key }}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Reihenfolge:</span>
+                            <input type="number"
+                                   class="w-16 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-2 py-1 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                                   name="sort_order_{{ activity_type.key }}"
+                                   value="{{ activity_type.sort_order }}"
+                                   min="0"
+                                   step="1"
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <!-- Formfelder -->
+                    <div class="space-y-3">
+                        <!-- Label -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Label</label>
+                            <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                   name="label_{{ activity_type.key }}"
+                                   value="{{ activity_type.label }}"
+                                   required>
+                        </div>
+                        
+                        <!-- Verhalten und Badge in 2 Spalten -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Verhalten</label>
+                                <select class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" name="behavior_{{ activity_type.key }}" required>
+                                    <option value="team" {% if activity_type.behavior == 'team' %}selected{% endif %}>Team</option>
+                                    <option value="individual" {% if activity_type.behavior == 'individual' %}selected{% endif %}>Individual</option>
+                                    <option value="group" {% if activity_type.behavior == 'group' %}selected{% endif %}>Group</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Badge</label>
+                                <input class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                       name="badge_class_{{ activity_type.key }}"
+                                       value="{{ activity_type.badge_class }}"
+                                       required>
+                            </div>
+                        </div>
+                        
+                        <!-- Farben in 2 Spalten -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Farbe Hell</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color"
+                                           class="h-10 w-14 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 cursor-pointer flex-shrink-0"
+                                           name="light_color_{{ activity_type.key }}"
+                                           value="{{ activity_type.light_color }}"
+                                           title="Hell">
+                                    <span class="text-xs text-slate-500 dark:text-slate-400 font-mono">{{ activity_type.light_color }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Farbe Dunkel</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color"
+                                           class="h-10 w-14 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 cursor-pointer flex-shrink-0"
+                                           name="dark_color_{{ activity_type.key }}"
+                                           value="{{ activity_type.dark_color }}"
+                                           title="Dunkel">
+                                    <span class="text-xs text-slate-500 dark:text-slate-400 font-mono">{{ activity_type.dark_color }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
+                <button class="tt-primary-button w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 text-white font-semibold rounded-lg transition transform hover:scale-105 shadow" type="submit">
+                    <i class="bi bi-check-circle"></i> Speichern
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
