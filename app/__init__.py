@@ -148,7 +148,7 @@ def create_app(config_class=Config):
     def csrf_protect():
         if request.path.startswith('/api/internal/'):
             return  # Interne Service-zu-Service APIs sind via Secret geschützt
-        if request.path in {'/admin/backup/download', '/admin/backup/restore'}:
+        if request.path == '/admin/backup/download':
             return
         if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
             token = session.get('_csrf_token')

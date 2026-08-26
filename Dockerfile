@@ -13,7 +13,14 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y gcc curl postgresql-client && rm -rf /var/lib/apt/lists/*
+# postgresql-client-16 exakt passend zur Server-Version (postgres:16-alpine in compose.yml) via PGDG-Repo,
+# da Debian trixie standardmaessig nur Client v17 anbietet (inkompatible SET-Parameter bei Dump/Restore).
+RUN apt-get update && apt-get install -y gcc curl ca-certificates gnupg lsb-release \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main 16" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update && apt-get install -y postgresql-client-16 \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

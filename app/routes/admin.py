@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, jsonify, abort, Response, send_file
+from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, jsonify, abort, Response, send_file, session
 from datetime import datetime, timedelta, date
 import json
 import os
@@ -279,7 +279,64 @@ def admin_backup_download():
 @bp.route('/admin/backup/restore', methods=['POST'])
 @admin_required
 def admin_backup_restore():
-    flash('Der In-App-Restore ist (noch) nicht implementiert. Bitte Backup manuell in die Datenbank einspielen.', 'warning')
+    """Spielt ein zuvor heruntergeladenes Full-Backup wieder ein (überschreibt alle aktuellen Daten)."""
+    if request.form.get('confirm') != 'RESTORE':
+        flash('Bestätigung erforderlich: Bitte "RESTORE" in das Bestätigungsfeld eingeben.', 'danger')
+        return redirect(url_for('admin.admin_backup'))
+
+    upload = request.files.get('backup_file')
+    if not upload or not upload.filename:
+        flash('Bitte eine Backup-Datei auswählen.', 'danger')
+        return redirect(url_for('admin.admin_backup'))
+
+    content = upload.read()
+    if not content:
+        flash('Die hochgeladene Datei ist leer.', 'danger')
+        return redirect(url_for('admin.admin_backup'))
+
+    backend = get_database_backend()
+
+    if backend == 'postgresql':
+        dump_uri = re.sub(r'^postgresql\+[a-zA-Z0-9_]+://', 'postgresql://', current_app.config['SQLALCHEMY_DATABASE_URI'])
+        # Schema-Reset + Restore in einer einzigen Transaktion (-1): schlägt ein Schritt fehl, bleibt die DB unverändert.
+        reset_and_restore = b"DROP SCHEMA public CASCADE;\nCREATE SCHEMA public;\n" + content
+        try:
+            result = subprocess.run(
+                ['psql', dump_uri, '-v', 'ON_ERROR_STOP=1', '-1'],
+                input=reset_and_restore, capture_output=True, timeout=180,
+            )
+        except FileNotFoundError:
+            current_app.logger.error('Restore fehlgeschlagen: psql ist nicht installiert.')
+            flash('Restore fehlgeschlagen: psql ist im Container nicht verfügbar.', 'danger')
+            return redirect(url_for('admin.admin_backup'))
+        if result.returncode != 0:
+            stderr = result.stderr.decode(errors='replace')[-2000:]
+            current_app.logger.error(f"Restore fehlgeschlagen, Datenbank unverändert: {stderr}")
+            flash('Restore fehlgeschlagen. Die Transaktion wurde zurückgerollt, die Datenbank ist unverändert. Details siehe Server-Log.', 'danger')
+            return redirect(url_for('admin.admin_backup'))
+        db.session.remove()
+        db.engine.dispose()
+        session.clear()
+        flash('Backup erfolgreich eingespielt. Bitte neu einloggen.', 'success')
+        return redirect(url_for('auth.login'))
+
+    if backend == 'sqlite':
+        if not content.startswith(b'SQLite format 3\x00'):
+            flash('Die Datei ist keine gültige SQLite-Backup-Datei.', 'danger')
+            return redirect(url_for('admin.admin_backup'))
+        db_path = current_app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '', 1)
+        if not os.path.isabs(db_path):
+            db_path = os.path.join(current_app.root_path, '..', db_path)
+        db.session.remove()
+        db.engine.dispose()
+        tmp_path = f'{db_path}.upload'
+        with open(tmp_path, 'wb') as f:
+            f.write(content)
+        os.replace(tmp_path, db_path)
+        flash('Backup erfolgreich eingespielt. Bitte Anwendung neu starten (z. B. Container-Neustart), damit alle Worker die neue Datenbank verwenden.', 'success')
+        return redirect(url_for('admin.admin_backup'))
+
+    flash(f'Restore für Datenbank-Backend "{backend}" wird nicht unterstützt.', 'warning')
     return redirect(url_for('admin.admin_backup'))
 
 @bp.route('/training/new', methods=['GET', 'POST'])
