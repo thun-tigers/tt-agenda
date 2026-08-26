@@ -1,6 +1,9 @@
-from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, jsonify, abort
+from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, jsonify, abort, Response, send_file
 from datetime import datetime, timedelta, date
 import json
+import os
+import re
+import subprocess
 import urllib.error
 import urllib.request
 from ..models import Training, Activity, TrainingInstance, ActivityInstance, ActivityType, AgendaCategory
@@ -233,13 +236,50 @@ def delete_hidden_training(id):
 @bp.route('/admin/backup/download', methods=['GET'])
 @admin_required
 def admin_backup_download():
-    flash('Der direkte Datenbank-Download ist entfernt. Bitte nutze das zentrale Backup im tt-infra-Service.', 'warning')
+    """Vollständiges Backup der Datenbank zum Download (PostgreSQL: pg_dump, SQLite: Datei-Kopie)."""
+    backend = get_database_backend()
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+
+    if backend == 'postgresql':
+        # pg_dump/libpq verstehen kein "+psycopg" im Schema, daher normalisieren
+        dump_uri = re.sub(r'^postgresql\+[a-zA-Z0-9_]+://', 'postgresql://', current_app.config['SQLALCHEMY_DATABASE_URI'])
+        try:
+            result = subprocess.run(
+                ['pg_dump', '--no-owner', '--no-privileges', dump_uri],
+                capture_output=True, check=True, timeout=120,
+            )
+        except FileNotFoundError:
+            current_app.logger.error('Backup fehlgeschlagen: pg_dump ist nicht installiert.')
+            flash('Backup fehlgeschlagen: pg_dump ist im Container nicht verfügbar.', 'danger')
+            return redirect(url_for('admin.admin_backup'))
+        except subprocess.CalledProcessError as exc:
+            current_app.logger.error(f"Backup fehlgeschlagen: {exc.stderr.decode(errors='replace')}")
+            flash('Backup konnte nicht erstellt werden. Details siehe Server-Log.', 'danger')
+            return redirect(url_for('admin.admin_backup'))
+        filename = f'tt-agenda_backup_{timestamp}.sql'
+        return Response(
+            result.stdout,
+            mimetype='application/sql',
+            headers={'Content-Disposition': f'attachment; filename="{filename}"'},
+        )
+
+    if backend == 'sqlite':
+        db_path = current_app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '', 1)
+        if not os.path.isabs(db_path):
+            db_path = os.path.join(current_app.root_path, '..', db_path)
+        if not os.path.exists(db_path):
+            flash('SQLite-Datenbankdatei wurde nicht gefunden.', 'danger')
+            return redirect(url_for('admin.admin_backup'))
+        filename = f'tt-agenda_backup_{timestamp}.db'
+        return send_file(db_path, as_attachment=True, download_name=filename)
+
+    flash(f'Backup für Datenbank-Backend "{backend}" wird nicht unterstützt.', 'warning')
     return redirect(url_for('admin.admin_backup'))
 
 @bp.route('/admin/backup/restore', methods=['POST'])
 @admin_required
 def admin_backup_restore():
-    flash('Der In-App-Restore ist entfernt. Bitte spiele Backups zentral im tt-infra-Service ein.', 'warning')
+    flash('Der In-App-Restore ist (noch) nicht implementiert. Bitte Backup manuell in die Datenbank einspielen.', 'warning')
     return redirect(url_for('admin.admin_backup'))
 
 @bp.route('/training/new', methods=['GET', 'POST'])
