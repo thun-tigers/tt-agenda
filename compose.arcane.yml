@@ -19,6 +19,8 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - cloudflared-tt
   db:
     image: postgres:16-alpine
     environment:
@@ -35,7 +37,14 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
+    networks:
+      - cloudflared-tt
 
 volumes:
   tt-agenda-instance:
   tt-agenda-db:
+    
+
+networks:
+  cloudflared-tt:
+    external: true
