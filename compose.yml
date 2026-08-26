@@ -25,6 +25,8 @@ services:
       POSTGRES_DB: tt_agenda
       POSTGRES_USER: tt_agenda
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tt_agenda_dev}
+      # Alpine/musl kennt keine glibc-Locales; ICU-Provider ermöglicht Schweizer Sortierung (de-CH)
+      POSTGRES_INITDB_ARGS: "--locale-provider=icu --icu-locale=de-CH --lc-collate=C.UTF-8 --lc-ctype=C.UTF-8"
     volumes:
       - agenda-db:/var/lib/postgresql/data
     healthcheck:
