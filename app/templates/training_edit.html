@@ -167,7 +167,7 @@
                 Aktivitäten
             </h2>
             <div class="flex items-center gap-2">
-                <span id="activities-reorder-status" class="text-xs text-slate-500 dark:text-slate-400">Drag-and-drop aktiv</span>
+                <span id="activities-reorder-status" class="text-xs text-slate-500 dark:text-slate-400">Block oder Griff ziehen · Pfeiltasten am Griff</span>
                 <button id="activities-reorder-save" type="button" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                     <i class="bi bi-check-lg"></i>
                     Speichern
@@ -219,7 +219,7 @@
                     {% endif %}
                     <tr data-activity-id="{{ activity.id }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <button type="button" draggable="true" class="js-activity-drag-handle cursor-grab active:cursor-grabbing touch-none p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg border border-slate-300 dark:border-slate-600" title="Reihenfolge ziehen" aria-label="Reihenfolge ziehen">
+                            <button type="button" class="js-activity-drag-handle cursor-grab active:cursor-grabbing touch-none p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg border border-slate-300 dark:border-slate-600" title="Reihenfolge ziehen" aria-label="Reihenfolge ziehen; mit Pfeiltasten verschieben">
                                 <i class="bi bi-grip-vertical text-sm"></i>
                             </button>
                         </td>
@@ -300,7 +300,9 @@ function setCancelDate() {
 
     const rowSelector = 'tr[data-activity-id]';
     let draggedRow = null;
-    let orderChanged = false;
+    let dragStartRows = null;
+    let dragPointerId = null;
+    let savedActivityIds = [];
 
     function setStatus(text, mode) {
         if (!statusEl) {
@@ -318,12 +320,11 @@ function setCancelDate() {
     }
 
     function setOrderChanged(changed) {
-        orderChanged = changed;
         saveButton.disabled = !changed;
         if (changed) {
             setStatus('Reihenfolge geändert - Speichern klicken', 'neutral');
         } else {
-            setStatus('Drag-and-drop aktiv', 'neutral');
+            setStatus('Block oder Griff ziehen · Pfeiltasten am Griff', 'neutral');
         }
     }
 
@@ -335,32 +336,45 @@ function setCancelDate() {
         return getRows().map((row) => Number(row.dataset.activityId));
     }
 
-    tbody.addEventListener('dragstart', (event) => {
+    function updateOrderStatus() {
+        const currentIds = getActivityIds();
+        const changed = currentIds.length !== savedActivityIds.length || currentIds.some((id, index) => id !== savedActivityIds[index]);
+        setOrderChanged(changed);
+    }
+
+    function restoreRows(rows) {
+        rows.forEach((row) => tbody.appendChild(row));
+    }
+
+    tbody.addEventListener('pointerdown', (event) => {
+        const row = event.target.closest(rowSelector);
         const handle = event.target.closest('.js-activity-drag-handle');
-        const row = handle && handle.closest(rowSelector);
-        if (!row) {
-            event.preventDefault();
+        const interactive = event.target.closest('a, button, input, select, textarea, form');
+        if (!row || (!handle && interactive) || event.button !== 0) {
             return;
         }
+
         draggedRow = row;
+        dragStartRows = getRows();
+        dragPointerId = event.pointerId;
+        row.style.pointerEvents = 'none';
         row.classList.add('opacity-50');
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('text/plain', row.dataset.activityId);
-    });
-
-    tbody.addEventListener('dragend', () => {
-        if (draggedRow) {
-            draggedRow.classList.remove('opacity-50');
+        tbody.classList.add('select-none');
+        try {
+            (handle || row).setPointerCapture(event.pointerId);
+        } catch (_) {
+            // Pointer capture is an enhancement; the delegated listeners still handle the drag.
         }
-        draggedRow = null;
+        event.preventDefault();
     });
 
-    tbody.addEventListener('dragover', (event) => {
-        if (!draggedRow) {
+    tbody.addEventListener('pointermove', (event) => {
+        if (!draggedRow || event.pointerId !== dragPointerId) {
             return;
         }
         event.preventDefault();
-        const row = event.target.closest(rowSelector);
+        const hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
+        const row = hoveredElement && hoveredElement.closest(rowSelector);
         if (!row || row === draggedRow) {
             return;
         }
@@ -368,18 +382,54 @@ function setCancelDate() {
         const rect = row.getBoundingClientRect();
         const insertAfter = event.clientY > rect.top + rect.height / 2;
         if (insertAfter) {
-            tbody.insertBefore(draggedRow, row.nextSibling);
-        } else {
+            if (row.nextElementSibling !== draggedRow) {
+                tbody.insertBefore(draggedRow, row.nextSibling);
+            }
+        } else if (draggedRow !== row.previousElementSibling) {
             tbody.insertBefore(draggedRow, row);
         }
     });
 
-    tbody.addEventListener('drop', (event) => {
+    function finishPointerDrag(event, cancelled) {
         if (!draggedRow) {
             return;
         }
+        if (event && event.pointerId !== dragPointerId) {
+            return;
+        }
+        draggedRow.style.pointerEvents = '';
+        draggedRow.classList.remove('opacity-50');
+        tbody.classList.remove('select-none');
+        if (cancelled && dragStartRows) {
+            restoreRows(dragStartRows);
+        }
+        draggedRow = null;
+        dragStartRows = null;
+        dragPointerId = null;
+        updateOrderStatus();
+    }
+
+    tbody.addEventListener('pointerup', (event) => finishPointerDrag(event, false));
+    tbody.addEventListener('pointercancel', (event) => finishPointerDrag(event, true));
+
+    tbody.addEventListener('keydown', (event) => {
+        const handle = event.target.closest('.js-activity-drag-handle');
+        const row = handle && handle.closest(rowSelector);
+        if (!row || !['ArrowUp', 'ArrowDown'].includes(event.key)) {
+            return;
+        }
         event.preventDefault();
-        setOrderChanged(true);
+        const adjacent = event.key === 'ArrowUp' ? row.previousElementSibling : row.nextElementSibling;
+        if (!adjacent || !adjacent.matches(rowSelector)) {
+            return;
+        }
+        if (event.key === 'ArrowUp') {
+            tbody.insertBefore(row, adjacent);
+        } else {
+            tbody.insertBefore(adjacent, row);
+        }
+        updateOrderStatus();
+        handle.focus();
     });
 
     saveButton.addEventListener('click', async () => {
@@ -416,6 +466,7 @@ function setCancelDate() {
                 throw new Error('HTTP ' + response.status);
             }
 
+            savedActivityIds = getActivityIds();
             setOrderChanged(false);
             setStatus('Reihenfolge gespeichert', 'success');
         } catch (error) {
@@ -424,6 +475,7 @@ function setCancelDate() {
         }
     });
 
+    savedActivityIds = getActivityIds();
     setOrderChanged(false);
 })();
 </script>
