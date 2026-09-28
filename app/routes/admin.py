@@ -1,5 +1,6 @@
 from flask import Blueprint, current_app, render_template, request, redirect, url_for, flash, jsonify, abort, Response, send_file, session
 from datetime import datetime, timedelta, date
+from pathlib import Path
 import json
 import os
 import re
@@ -84,8 +85,21 @@ def _load_admin_training_lists(query_text, type_filter, include_ended):
 @bp.route('/admin')
 @admin_required
 def admin_overview():
-    """Redirect zur Trainings-Verwaltung (alte Overview-Seite wurde entfernt)"""
-    return redirect(url_for('admin.admin_trainings'))
+    """Startseite für die administrativen Funktionen."""
+    return render_template('admin_home.html')
+
+
+@bp.route('/admin/help')
+@admin_required
+def admin_help():
+    """Hilfeseite mit der Version des laufenden Builds."""
+    version_file = Path(current_app.root_path).parent / 'VERSION'
+    try:
+        version = version_file.read_text(encoding='utf-8').strip() or 'Unbekannt'
+    except OSError:
+        current_app.logger.warning('Versionsdatei fehlt: %s', version_file)
+        version = 'Unbekannt'
+    return render_template('admin_help.html', version=version)
 
 @bp.route('/admin/trainings')
 @admin_required
