@@ -167,7 +167,7 @@
                 Aktivitäten
             </h2>
             <div class="flex items-center gap-2">
-                <span id="activities-reorder-status" class="text-xs text-slate-500 dark:text-slate-400">Block oder Griff ziehen · Pfeiltasten am Griff</span>
+                <span id="activities-reorder-status" class="text-xs text-slate-500 dark:text-slate-400">Mit Pfeilen Reihenfolge ändern, danach speichern</span>
                 <button id="activities-reorder-save" type="button" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                     <i class="bi bi-check-lg"></i>
                     Speichern
@@ -218,10 +218,15 @@
                         {% endif %}
                     {% endif %}
                     <tr data-activity-id="{{ activity.id }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <button type="button" class="js-activity-drag-handle cursor-grab active:cursor-grabbing touch-none p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg border border-slate-300 dark:border-slate-600" title="Reihenfolge ziehen" aria-label="Reihenfolge ziehen; mit Pfeiltasten verschieben">
-                                <i class="bi bi-grip-vertical text-sm"></i>
-                            </button>
+                        <td class="px-3 py-3 whitespace-nowrap">
+                            <div class="flex flex-col items-center gap-1">
+                                <button type="button" class="js-activity-move-up inline-flex h-7 w-8 items-center justify-center rounded border border-slate-300 text-slate-600 transition hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-30 dark:border-slate-600 dark:text-slate-300 dark:hover:border-indigo-500 dark:hover:bg-slate-700 dark:hover:text-indigo-300" title="Aktivität nach oben verschieben" aria-label="Aktivität nach oben verschieben">
+                                    <i class="bi bi-chevron-up"></i>
+                                </button>
+                                <button type="button" class="js-activity-move-down inline-flex h-7 w-8 items-center justify-center rounded border border-slate-300 text-slate-600 transition hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-30 dark:border-slate-600 dark:text-slate-300 dark:hover:border-indigo-500 dark:hover:bg-slate-700 dark:hover:text-indigo-300" title="Aktivität nach unten verschieben" aria-label="Aktivität nach unten verschieben">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-slate-900 dark:text-white">{{ activity.start_time.strftime('%H:%M') }}</td>
                         <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">{{ activity.duration }} Min</td>
@@ -299,9 +304,6 @@ function setCancelDate() {
     }
 
     const rowSelector = 'tr[data-activity-id]';
-    let draggedRow = null;
-    let dragStartRows = null;
-    let dragPointerId = null;
     let savedActivityIds = [];
 
     function setStatus(text, mode) {
@@ -324,7 +326,7 @@ function setCancelDate() {
         if (changed) {
             setStatus('Reihenfolge geändert - Speichern klicken', 'neutral');
         } else {
-            setStatus('Block oder Griff ziehen · Pfeiltasten am Griff', 'neutral');
+            setStatus('Mit Pfeilen Reihenfolge ändern, danach speichern', 'neutral');
         }
     }
 
@@ -336,100 +338,47 @@ function setCancelDate() {
         return getRows().map((row) => Number(row.dataset.activityId));
     }
 
+    function updateMoveButtons() {
+        const rows = getRows();
+        rows.forEach((row, index) => {
+            const moveUp = row.querySelector('.js-activity-move-up');
+            const moveDown = row.querySelector('.js-activity-move-down');
+            if (moveUp) moveUp.disabled = index === 0;
+            if (moveDown) moveDown.disabled = index === rows.length - 1;
+        });
+    }
+
     function updateOrderStatus() {
         const currentIds = getActivityIds();
         const changed = currentIds.length !== savedActivityIds.length || currentIds.some((id, index) => id !== savedActivityIds[index]);
         setOrderChanged(changed);
+        updateMoveButtons();
     }
 
-    function restoreRows(rows) {
-        rows.forEach((row) => tbody.appendChild(row));
-    }
-
-    tbody.addEventListener('pointerdown', (event) => {
-        const row = event.target.closest(rowSelector);
-        const handle = event.target.closest('.js-activity-drag-handle');
-        const interactive = event.target.closest('a, button, input, select, textarea, form');
-        if (!row || (!handle && interactive) || event.button !== 0) {
+    tbody.addEventListener('click', (event) => {
+        const button = event.target.closest('.js-activity-move-up, .js-activity-move-down');
+        if (!button) {
+            return;
+        }
+        const row = button.closest(rowSelector);
+        if (!row) {
+            return;
+        }
+        const moveUp = button.classList.contains('js-activity-move-up');
+        const adjacentRow = moveUp ? row.previousElementSibling : row.nextElementSibling;
+        if (!adjacentRow || !adjacentRow.matches(rowSelector)) {
             return;
         }
 
-        draggedRow = row;
-        dragStartRows = getRows();
-        dragPointerId = event.pointerId;
-        row.style.pointerEvents = 'none';
-        row.classList.add('opacity-50');
-        tbody.classList.add('select-none');
-        try {
-            (handle || row).setPointerCapture(event.pointerId);
-        } catch (_) {
-            // Pointer capture is an enhancement; the delegated listeners still handle the drag.
-        }
-        event.preventDefault();
-    });
-
-    tbody.addEventListener('pointermove', (event) => {
-        if (!draggedRow || event.pointerId !== dragPointerId) {
-            return;
-        }
-        event.preventDefault();
-        const hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
-        const row = hoveredElement && hoveredElement.closest(rowSelector);
-        if (!row || row === draggedRow) {
-            return;
-        }
-
-        const rect = row.getBoundingClientRect();
-        const insertAfter = event.clientY > rect.top + rect.height / 2;
-        if (insertAfter) {
-            if (row.nextElementSibling !== draggedRow) {
-                tbody.insertBefore(draggedRow, row.nextSibling);
-            }
-        } else if (draggedRow !== row.previousElementSibling) {
-            tbody.insertBefore(draggedRow, row);
-        }
-    });
-
-    function finishPointerDrag(event, cancelled) {
-        if (!draggedRow) {
-            return;
-        }
-        if (event && event.pointerId !== dragPointerId) {
-            return;
-        }
-        draggedRow.style.pointerEvents = '';
-        draggedRow.classList.remove('opacity-50');
-        tbody.classList.remove('select-none');
-        if (cancelled && dragStartRows) {
-            restoreRows(dragStartRows);
-        }
-        draggedRow = null;
-        dragStartRows = null;
-        dragPointerId = null;
-        updateOrderStatus();
-    }
-
-    tbody.addEventListener('pointerup', (event) => finishPointerDrag(event, false));
-    tbody.addEventListener('pointercancel', (event) => finishPointerDrag(event, true));
-
-    tbody.addEventListener('keydown', (event) => {
-        const handle = event.target.closest('.js-activity-drag-handle');
-        const row = handle && handle.closest(rowSelector);
-        if (!row || !['ArrowUp', 'ArrowDown'].includes(event.key)) {
-            return;
-        }
-        event.preventDefault();
-        const adjacent = event.key === 'ArrowUp' ? row.previousElementSibling : row.nextElementSibling;
-        if (!adjacent || !adjacent.matches(rowSelector)) {
-            return;
-        }
-        if (event.key === 'ArrowUp') {
-            tbody.insertBefore(row, adjacent);
+        if (moveUp) {
+            tbody.insertBefore(row, adjacentRow);
         } else {
-            tbody.insertBefore(adjacent, row);
+            tbody.insertBefore(adjacentRow, row);
         }
         updateOrderStatus();
-        handle.focus();
+
+        const focusTarget = Array.from(row.querySelectorAll('.js-activity-move-up, .js-activity-move-down')).find((control) => !control.disabled);
+        if (focusTarget) focusTarget.focus();
     });
 
     saveButton.addEventListener('click', async () => {
@@ -467,7 +416,7 @@ function setCancelDate() {
             }
 
             savedActivityIds = getActivityIds();
-            setOrderChanged(false);
+            updateOrderStatus();
             setStatus('Reihenfolge gespeichert', 'success');
         } catch (error) {
             setStatus('Speichern fehlgeschlagen', 'error');
@@ -476,7 +425,7 @@ function setCancelDate() {
     });
 
     savedActivityIds = getActivityIds();
-    setOrderChanged(false);
+    updateOrderStatus();
 })();
 </script>
 {% endblock %}
