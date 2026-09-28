@@ -6,7 +6,7 @@ on:
       tag:
         description: "Image tag to publish (e.g. v0.1.19, beta, hotfix)"
         required: true
-        default: dev
+        default: latest
         type: string
 
 env:
