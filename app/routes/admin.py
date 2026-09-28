@@ -1132,20 +1132,49 @@ def update_activity(id):
 @bp.route('/activity/reorder', methods=['POST'])
 @admin_required
 def reorder_activities():
-    data = request.json
-    training_id = data['training_id']
-    activity_ids = data['activity_ids']
+    data = request.get_json(silent=True) or {}
+    training_id = data.get('training_id')
+    activity_ids = data.get('activity_ids')
+    if not isinstance(training_id, int) or isinstance(training_id, bool):
+        return jsonify({'error': 'invalid_training_id'}), 400
+    if not isinstance(activity_ids, list) or any(not isinstance(item, int) or isinstance(item, bool) for item in activity_ids):
+        return jsonify({'error': 'invalid_activity_ids'}), 400
 
     training = _team_scoped_training_or_404(training_id)
+    activities = Activity.query.filter_by(training_id=training.id).all()
+    current_ids = {activity.id for activity in activities}
+    if len(activity_ids) != len(current_ids) or set(activity_ids) != current_ids:
+        return jsonify({'error': 'activity_list_mismatch'}), 400
 
+    activities_by_id = {activity.id: activity for activity in activities}
     for index, activity_id in enumerate(activity_ids):
-        activity = db.session.get(Activity, activity_id)
-        if activity:
-            activity.order_index = index
+        activities_by_id[activity_id].order_index = index
 
     db.session.commit()
     recalculate_times(training.id)
+    return jsonify({'success': True})
 
+
+@bp.route('/training/instance/<int:instance_id>/activities/reorder', methods=['POST'])
+@admin_required
+def reorder_instance_activities(instance_id):
+    instance = _team_scoped_instance_or_404(instance_id)
+    data = request.get_json(silent=True) or {}
+    activity_ids = data.get('activity_ids')
+    if not isinstance(activity_ids, list) or any(not isinstance(item, int) or isinstance(item, bool) for item in activity_ids):
+        return jsonify({'error': 'invalid_activity_ids'}), 400
+
+    activities = ActivityInstance.query.filter_by(training_instance_id=instance.id).all()
+    current_ids = {activity.id for activity in activities}
+    if len(activity_ids) != len(current_ids) or set(activity_ids) != current_ids:
+        return jsonify({'error': 'activity_list_mismatch'}), 400
+
+    activities_by_id = {activity.id: activity for activity in activities}
+    for index, activity_id in enumerate(activity_ids):
+        activities_by_id[activity_id].order_index = index
+
+    db.session.commit()
+    recalculate_instance_times(instance.id)
     return jsonify({'success': True})
 
 @bp.route('/activity/<int:id>/delete', methods=['POST'])

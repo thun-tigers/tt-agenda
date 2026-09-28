@@ -217,9 +217,9 @@
                             {% endif %}
                         {% endif %}
                     {% endif %}
-                    <tr data-activity-id="{{ activity.id }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors" draggable="true">
+                    <tr data-activity-id="{{ activity.id }}" class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
                         <td class="px-4 py-3 whitespace-nowrap">
-                            <button type="button" class="js-activity-drag-handle p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg border border-slate-300 dark:border-slate-600" title="Reihenfolge ziehen" aria-label="Reihenfolge ziehen">
+                            <button type="button" draggable="true" class="js-activity-drag-handle cursor-grab active:cursor-grabbing touch-none p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg border border-slate-300 dark:border-slate-600" title="Reihenfolge ziehen" aria-label="Reihenfolge ziehen">
                                 <i class="bi bi-grip-vertical text-sm"></i>
                             </button>
                         </td>
@@ -336,7 +336,8 @@ function setCancelDate() {
     }
 
     tbody.addEventListener('dragstart', (event) => {
-        const row = event.target.closest(rowSelector);
+        const handle = event.target.closest('.js-activity-drag-handle');
+        const row = handle && handle.closest(rowSelector);
         if (!row) {
             event.preventDefault();
             return;
@@ -344,6 +345,7 @@ function setCancelDate() {
         draggedRow = row;
         row.classList.add('opacity-50');
         event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', row.dataset.activityId);
     });
 
     tbody.addEventListener('dragend', () => {

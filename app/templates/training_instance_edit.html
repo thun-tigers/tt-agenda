@@ -22,21 +22,23 @@
                 Aktivitäten
             </h2>
             <div class="flex items-center gap-2">
-                <div id="instance-activities-list-controls" class="js-smart-list-controls"></div>
+                <span id="instance-reorder-status" class="text-xs text-slate-500 dark:text-slate-400">Blöcke ziehen und Reihenfolge speichern</span>
+                <button id="instance-reorder-save" type="button" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed" disabled>Speichern</button>
                 <a href="{{ url_for('admin.edit_training', id=training.id) }}" class="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition text-sm font-semibold">
                     <i class="bi bi-arrow-left"></i> Zum Template
                 </a>
             </div>
         </div>
 
-        <div id="activities-list" class="space-y-2 js-smart-list" data-controls-host="instance-activities-list-controls">
+        <div id="activities-list" class="space-y-2" data-reorder-url="{{ url_for('admin.reorder_instance_activities', instance_id=instance.id) }}" data-owner-id="{{ instance.id }}" data-csrf-token="{{ csrf_token() }}">
             {% for activity in activities %}
             {% set activity_def = ACTIVITY_TYPE_DEFS.get(activity.activity_type, {}) %}
             {% set activity_label = activity_def.label if activity_def else activity.activity_type %}
             {% set activity_behavior = activity_def.behavior if activity_def else '' %}
-            <div class="bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200 dark:border-slate-600 p-4 hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600 transition-all activity-type-{{ activity.activity_type }}" data-smart-list-item data-sort-time="{{ activity.start_time.strftime('%H:%M') }}">
+            <div data-activity-id="{{ activity.id }}" class="bg-slate-50 dark:bg-slate-700/30 rounded-lg border border-slate-200 dark:border-slate-600 p-4 hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600 transition-all activity-type-{{ activity.activity_type }}">
                 <div class="flex gap-3 items-start">
                     <div class="flex flex-col gap-1 justify-start pt-0.5">
+                        <button type="button" draggable="true" class="js-instance-activity-drag-handle cursor-grab active:cursor-grabbing touch-none p-1.5 text-slate-500 hover:text-indigo-600 rounded border border-slate-300 dark:border-slate-600" title="Reihenfolge ziehen" aria-label="Reihenfolge ziehen"><i class="bi bi-grip-vertical"></i></button>
                         {% if not loop.first %}
                         <form method="POST" action="{{ url_for('admin.move_instance_activity_up', id=activity.id) }}" class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -165,6 +167,66 @@
         <a href="{{ url_for('admin.add_instance_activity', instance_id=instance.id) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg transition transform hover:scale-105 shadow mt-4">
             <i class="bi bi-plus-circle"></i> Aktivität hinzufügen
         </a>
-    </div>
 </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function () {
+    const list = document.getElementById('activities-list');
+    const save = document.getElementById('instance-reorder-save');
+    const status = document.getElementById('instance-reorder-status');
+    if (!list || !save) return;
+    let dragged = null;
+    const rows = () => Array.from(list.querySelectorAll('[data-activity-id]'));
+    const setChanged = (changed) => {
+        save.disabled = !changed;
+        status.textContent = changed ? 'Reihenfolge geändert – Speichern klicken' : 'Blöcke ziehen und Reihenfolge speichern';
+    };
+    list.addEventListener('dragstart', (event) => {
+        const handle = event.target.closest('.js-instance-activity-drag-handle');
+        dragged = handle && handle.closest('[data-activity-id]');
+        if (!dragged) { event.preventDefault(); return; }
+        dragged.classList.add('opacity-50');
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', dragged.dataset.activityId);
+    });
+    list.addEventListener('dragend', () => {
+        if (dragged) dragged.classList.remove('opacity-50');
+        dragged = null;
+    });
+    list.addEventListener('dragover', (event) => {
+        if (!dragged) return;
+        event.preventDefault();
+        const target = event.target.closest('[data-activity-id]');
+        if (!target || target === dragged) return;
+        const rect = target.getBoundingClientRect();
+        list.insertBefore(dragged, event.clientY > rect.top + rect.height / 2 ? target.nextSibling : target);
+    });
+    list.addEventListener('drop', (event) => {
+        if (!dragged) return;
+        event.preventDefault();
+        setChanged(true);
+    });
+    save.addEventListener('click', async () => {
+        save.disabled = true;
+        status.textContent = 'Speichere Reihenfolge …';
+        try {
+            const response = await fetch(list.dataset.reorderUrl, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': list.dataset.csrfToken},
+                body: JSON.stringify({activity_ids: rows().map(row => Number(row.dataset.activityId)), csrf_token: list.dataset.csrfToken})
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            setChanged(false);
+            status.textContent = 'Reihenfolge gespeichert';
+        } catch (_) {
+            save.disabled = false;
+            status.textContent = 'Speichern fehlgeschlagen';
+        }
+    });
+})();
+</script>
 {% endblock %}

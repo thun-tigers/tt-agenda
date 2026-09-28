@@ -1,7 +1,97 @@
 from datetime import date, time
 
 from app.extensions import db
-from app.models import Training, TrainingInstance, ActivityInstance
+from app.models import Training, TrainingInstance, Activity, ActivityInstance
+
+
+def test_reorder_activities_persists_complete_order(client, app, login_as, csrf_token):
+    login_as(username='reorder_admin', password='pw', role='admin')
+    with app.app_context():
+        training = Training(
+            name='Reorder Test', weekday=0, start_date=date(2026, 1, 1),
+            end_date=date(2026, 12, 31), start_time=time(18, 0), team_code='SENIORS',
+        )
+        db.session.add(training)
+        db.session.flush()
+        first = Activity(training_id=training.id, activity_type='team', start_time=time(18, 0), duration=30, order_index=0)
+        second = Activity(training_id=training.id, activity_type='team', start_time=time(18, 30), duration=30, order_index=1)
+        db.session.add_all([first, second])
+        db.session.commit()
+        training_id, activity_ids = training.id, [first.id, second.id]
+
+    token = csrf_token('/training/edit')
+    response = client.post('/activity/reorder', json={
+        'training_id': training_id,
+        'activity_ids': list(reversed(activity_ids)),
+        'csrf_token': token,
+    }, headers={'X-CSRFToken': token})
+    assert response.status_code == 200
+    with app.app_context():
+        ordered = Activity.query.filter_by(training_id=training_id).order_by(Activity.order_index).all()
+        assert [activity.id for activity in ordered] == list(reversed(activity_ids))
+        assert ordered[0].start_time == time(18, 0)
+
+
+def test_reorder_activities_rejects_incomplete_or_foreign_ids(client, app, login_as, csrf_token):
+    login_as(username='reorder_guard_admin', password='pw', role='admin')
+    with app.app_context():
+        training = Training(
+            name='Reorder Guard', weekday=0, start_date=date(2026, 1, 1),
+            end_date=date(2026, 12, 31), start_time=time(18, 0), team_code='SENIORS',
+        )
+        db.session.add(training)
+        db.session.flush()
+        activities = [
+            Activity(training_id=training.id, activity_type='team', start_time=time(18, 0), duration=30, order_index=0),
+            Activity(training_id=training.id, activity_type='team', start_time=time(18, 30), duration=30, order_index=1),
+        ]
+        db.session.add_all(activities)
+        db.session.commit()
+        training_id, activity_ids = training.id, [activity.id for activity in activities]
+
+    token = csrf_token('/training/edit')
+    response = client.post('/activity/reorder', json={
+        'training_id': training_id,
+        'activity_ids': activity_ids[:1],
+        'csrf_token': token,
+    }, headers={'X-CSRFToken': token})
+    assert response.status_code == 400
+    with app.app_context():
+        ordered = Activity.query.filter_by(training_id=training_id).order_by(Activity.order_index).all()
+        assert [activity.id for activity in ordered] == activity_ids
+
+
+def test_instance_activity_reorder_persists_complete_order(client, app, login_as, csrf_token):
+    login_as(username='instance_reorder_admin', password='pw', role='admin')
+    with app.app_context():
+        training = Training(
+            name='Instance Reorder', weekday=0, start_date=date(2026, 1, 1),
+            end_date=date(2026, 12, 31), start_time=time(18, 0), team_code='SENIORS',
+        )
+        db.session.add(training)
+        db.session.flush()
+        instance = TrainingInstance(training_id=training.id, date=date(2026, 9, 28), status='active', start_time=time(18, 0))
+        db.session.add(instance)
+        db.session.flush()
+        activities = [
+            ActivityInstance(training_instance_id=instance.id, activity_type='team', start_time=time(18, 0), duration=30, order_index=0),
+            ActivityInstance(training_instance_id=instance.id, activity_type='team', start_time=time(18, 30), duration=30, order_index=1),
+        ]
+        db.session.add_all(activities)
+        db.session.commit()
+        instance_id, activity_ids = instance.id, [activity.id for activity in activities]
+
+    token = csrf_token('/admin/trainings')
+    response = client.post(
+        f'/training/instance/{instance_id}/activities/reorder',
+        json={'activity_ids': list(reversed(activity_ids)), 'csrf_token': token},
+        headers={'X-CSRFToken': token},
+    )
+    assert response.status_code == 200
+    with app.app_context():
+        ordered = ActivityInstance.query.filter_by(training_instance_id=instance_id).order_by(ActivityInstance.order_index).all()
+        assert [activity.id for activity in ordered] == list(reversed(activity_ids))
+        assert ordered[0].start_time == time(18, 0)
 
 
 def test_copy_training_instance_picks_next_free_date(client, app, login_as, csrf_token):
