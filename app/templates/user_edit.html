@@ -2,17 +2,46 @@
 {% block title %}Benutzer bearbeiten · tt-agenda{% endblock %}
 {% block content %}
 <div class="mx-auto max-w-2xl">
-  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
     <h1 class="text-2xl font-bold tracking-tight">{{ user.full_name }}</h1>
     <p class="mt-1 text-sm text-slate-500">{{ user.username }}</p>
     <form method="post" class="mt-6 grid gap-5 sm:grid-cols-2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div><label class="mb-1.5 block text-sm font-medium text-slate-700">Vorname</label><input class="w-full rounded-xl border border-slate-300 px-4 py-2.5" name="first_name" value="{{ user.first_name or '' }}"></div>
-      <div><label class="mb-1.5 block text-sm font-medium text-slate-700">Nachname</label><input class="w-full rounded-xl border border-slate-300 px-4 py-2.5" name="last_name" value="{{ user.last_name or '' }}"></div>
-      <div><label class="mb-1.5 block text-sm font-medium text-slate-700">E-Mail</label><input class="w-full rounded-xl border border-slate-300 px-4 py-2.5" name="email" value="{{ user.email or '' }}"></div>
-      <div><label class="mb-1.5 block text-sm font-medium text-slate-700">Rolle</label><select class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5" name="role"><option value="user" {% if user.role != 'admin' %}selected{% endif %}>Benutzer</option><option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option></select></div>
-      <div><label class="mb-1.5 block text-sm font-medium text-slate-700">Status</label><select class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5" name="account_status"><option value="pending" {% if user.account_status == 'pending' %}selected{% endif %}>Wartet auf Freigabe</option><option value="active" {% if user.account_status == 'active' %}selected{% endif %}>Aktiv</option><option value="suspended" {% if user.account_status == 'suspended' %}selected{% endif %}>Gesperrt</option></select></div>
-      <div class="flex items-end"><button class="rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white" type="submit">Speichern</button></div>
+      <div><label class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Vorname</label><input class="w-full rounded-xl border border-slate-300 px-4 py-2.5" name="first_name" value="{{ user.first_name or '' }}"></div>
+      <div><label class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Nachname</label><input class="w-full rounded-xl border border-slate-300 px-4 py-2.5" name="last_name" value="{{ user.last_name or '' }}"></div>
+      <div><label class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">E-Mail</label><input class="w-full rounded-xl border border-slate-300 px-4 py-2.5" name="email" value="{{ user.email or '' }}"></div>
+      <div><label class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Rolle</label><select class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5" name="role"><option value="user" {% if user.role != 'admin' %}selected{% endif %}>Benutzer</option><option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option></select></div>
+      <div><label class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Status</label><select class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5" name="account_status"><option value="pending" {% if user.account_status == 'pending' %}selected{% endif %}>Wartet auf Freigabe</option><option value="active" {% if user.account_status == 'active' %}selected{% endif %}>Aktiv</option><option value="suspended" {% if user.account_status == 'suspended' %}selected{% endif %}>Gesperrt</option></select></div>
+
+      <section class="sm:col-span-2 mt-2 rounded-2xl border border-slate-200 p-5 dark:border-slate-700">
+        <div class="mb-4">
+          <h2 class="text-lg font-semibold">Module</h2>
+          <p class="mt-1 text-sm text-slate-500">Hier wird festgelegt, welche Thun-Tigers-Module der Benutzer öffnen darf.</p>
+        </div>
+        <div class="grid gap-3">
+          <div class="flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800">
+            <label class="flex items-center gap-3">
+              <input type="checkbox" checked disabled class="h-4 w-4 rounded border-slate-300 text-indigo-600">
+              <span><strong>Agenda</strong><span class="block text-xs text-slate-500">Basis-Modul</span></span>
+            </label>
+            <span class="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200">{{ 'Admin' if user.role == 'admin' else 'Benutzer' }}</span>
+          </div>
+          {% set drillbook_role = user.module_role('drillbook') %}
+          <div class="grid gap-3 rounded-xl bg-slate-50 px-4 py-3 sm:grid-cols-[1fr_180px] sm:items-center dark:bg-slate-800">
+            <label class="flex items-center gap-3">
+              <input type="checkbox" name="module_drillbook" {% if drillbook_role %}checked{% endif %} class="h-4 w-4 rounded border-slate-300 text-indigo-600">
+              <span><strong>Drillbook</strong><span class="block text-xs text-slate-500">Drills und Trainingsplanung</span></span>
+            </label>
+            <select name="module_drillbook_role" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm">
+              <option value="viewer" {% if drillbook_role == 'viewer' or not drillbook_role %}selected{% endif %}>Viewer</option>
+              <option value="coach" {% if drillbook_role == 'coach' %}selected{% endif %}>Coach</option>
+              <option value="admin" {% if drillbook_role == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <div class="sm:col-span-2 flex items-end"><button class="rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white" type="submit">Speichern</button></div>
     </form>
   </div>
 </div>

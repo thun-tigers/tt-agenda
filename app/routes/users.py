@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from ..extensions import db
-from ..models import User
+from ..models import User, UserModule
 from ..utils import admin_required
 
 bp = Blueprint('users', __name__, url_prefix='/users')
@@ -31,6 +31,27 @@ def edit(user_id):
         user.account_status = request.form.get('account_status') or 'active'
         user.is_active = user.account_status != 'suspended'
         user.display_name = user.full_name
+
+        drillbook = UserModule.query.filter_by(user_id=user.id, module_key='drillbook').first()
+        drillbook_enabled = request.form.get('module_drillbook') == 'on'
+        drillbook_role = request.form.get('module_drillbook_role') or 'viewer'
+        if drillbook_role not in {'viewer', 'coach', 'admin'}:
+            drillbook_role = 'viewer'
+        if drillbook is None:
+            drillbook = UserModule(user_id=user.id, module_key='drillbook', enabled=drillbook_enabled, role=drillbook_role)
+            db.session.add(drillbook)
+        else:
+            drillbook.enabled = drillbook_enabled
+            drillbook.role = drillbook_role
+
+        agenda = UserModule.query.filter_by(user_id=user.id, module_key='agenda').first()
+        if agenda is None:
+            agenda = UserModule(user_id=user.id, module_key='agenda', enabled=True, role='admin' if user.role == 'admin' else 'user')
+            db.session.add(agenda)
+        else:
+            agenda.enabled = True
+            agenda.role = 'admin' if user.role == 'admin' else 'user'
+
         db.session.commit()
         flash(f'Benutzer {user.username} gespeichert.', 'success')
         return redirect(url_for('users.index'))

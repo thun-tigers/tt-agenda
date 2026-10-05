@@ -24,9 +24,11 @@ class Config:
     PUSHOVER_USER = os.environ.get('PUSHOVER_USER')
     PUSHOVER_URL = os.environ.get('PUSHOVER_URL', 'https://api.pushover.net/1/messages.json')
     PUSHOVER_TIMEOUT = float(os.environ.get('PUSHOVER_TIMEOUT', '3'))
-    # Rate limiting: override with redis://host:port/0 for multi-worker production
     RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI', 'memory://')
     DEFAULT_ADMIN_USERNAME = os.environ.get('DEFAULT_ADMIN_USERNAME', 'admin')
     DEFAULT_ADMIN_PASSWORD = os.environ.get('DEFAULT_ADMIN_PASSWORD')
-    # Begrenzung für Uploads (u. a. Backup-Restore), Standard 200 MB
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', str(200 * 1024 * 1024)))
+
+    # Shared, short-lived SSO tokens for Thun Tigers modules.
+    SSO_SHARED_SECRET = os.environ.get('SSO_SHARED_SECRET')
+    DRILLBOOK_URL = os.environ.get('DRILLBOOK_URL', 'https://drillbook.thun-tigers.net').rstrip('/')

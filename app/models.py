@@ -15,7 +15,6 @@ class JsonType(TypeDecorator):
         if value is None:
             return None
         if isinstance(value, str):
-            # Bereits serialisiert (Rückwärtskompatibilität)
             return value
         return json.dumps(value, ensure_ascii=False)
 
@@ -26,6 +25,7 @@ class JsonType(TypeDecorator):
             return json.loads(value)
         except (json.JSONDecodeError, TypeError):
             return None
+
 
 class Training(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,6 +56,7 @@ class AgendaCategory(db.Model):
     attendance_allowed_for = db.Column(JsonType, nullable=False, default=list)
     show_presence_tracking = db.Column(db.Boolean, nullable=False, default=True)
 
+
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     training_id = db.Column(db.Integer, db.ForeignKey('training.id'), nullable=False)
@@ -68,6 +69,7 @@ class Activity(db.Model):
     topics_json = db.Column(JsonType)
     color = db.Column(db.String(7), default='#10b981')
 
+
 class TrainingInstance(db.Model):
     __table_args__ = (db.UniqueConstraint('training_id', 'date', name='uq_training_instance_date'),)
     id = db.Column(db.Integer, primary_key=True)
@@ -76,6 +78,7 @@ class TrainingInstance(db.Model):
     status = db.Column(db.String(20), default='active', nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     activities = db.relationship('ActivityInstance', backref='training_instance', lazy=True, cascade='all, delete-orphan')
+
 
 class ActivityInstance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -88,6 +91,7 @@ class ActivityInstance(db.Model):
     order_index = db.Column(db.Integer, default=0)
     topics_json = db.Column(JsonType)
     color = db.Column(db.String(7), default='#10b981')
+
 
 class ActivityType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -116,6 +120,7 @@ class User(db.Model):
     position = db.Column(db.String(40))
     phone = db.Column(db.String(40))
     notes = db.Column(db.Text)
+    modules = db.relationship('UserModule', back_populates='user', cascade='all, delete-orphan', lazy='selectin')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -134,3 +139,22 @@ class User(db.Model):
     @property
     def teams(self):
         return self.memberships_json if isinstance(self.memberships_json, list) else []
+
+    def module_role(self, module_key):
+        module = next((item for item in self.modules if item.module_key == module_key and item.enabled), None)
+        return module.role if module else None
+
+    def has_module(self, module_key):
+        return self.module_role(module_key) is not None
+
+
+class UserModule(db.Model):
+    __tablename__ = 'user_module'
+    __table_args__ = (db.UniqueConstraint('user_id', 'module_key', name='uq_user_module'),)
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False, index=True)
+    module_key = db.Column(db.String(40), nullable=False, index=True)
+    enabled = db.Column(db.Boolean, nullable=False, default=True)
+    role = db.Column(db.String(20), nullable=False, default='viewer')
+    user = db.relationship('User', back_populates='modules')

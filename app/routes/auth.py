@@ -1,7 +1,8 @@
 from functools import wraps
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlencode
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from itsdangerous import URLSafeTimedSerializer
 
 from ..extensions import db, limiter
 from ..models import User
@@ -33,10 +34,16 @@ def _start_session(user):
     session['active_team_code'] = codes[0] if codes else 'SENIORS'
 
 
+def _sso_serializer():
+    secret = current_app.config.get('SSO_SHARED_SECRET')
+    if not secret:
+        return None
+    return URLSafeTimedSerializer(secret, salt='tt-platform-sso-v1')
+
+
 @bp.route('/auth')
 @bp.route('/auth/')
 def auth_entrypoint():
-    """Kompatibler Einstieg für die bisherige /auth/-URL."""
     return redirect(url_for('auth.login'))
 
 
@@ -47,13 +54,15 @@ def login():
     if request.method == 'POST':
         username = (request.form.get('username') or '').strip()
         user = User.query.filter_by(username=username).first()
-        if user and user.check_password(request.form.get('password') or '') and user.can_login:
+        password = request.form.get('password') or ''
+        valid_password = bool(user and user.check_password(password))
+        if user and valid_password and user.can_login:
             _start_session(user)
             notify_login(user)
             return redirect(next_page or url_for('main.index'))
-        if user and user.check_password(request.form.get('password') or '') and user.account_status == 'pending':
+        if user and valid_password and user.account_status == 'pending':
             flash('Dein Konto wartet noch auf die Freigabe durch einen Coach oder Administrator.', 'warning')
-        elif user and user.check_password(request.form.get('password') or '') and user.account_status == 'suspended':
+        elif user and valid_password and user.account_status == 'suspended':
             flash('Dein Konto ist gesperrt. Bitte wende dich an einen Administrator.', 'danger')
         else:
             flash('Benutzername oder Passwort ist nicht korrekt.', 'danger')
@@ -101,6 +110,39 @@ def register():
 def logout():
     session.clear()
     return redirect(url_for('auth.login'))
+
+
+@bp.route('/sso/drillbook')
+def sso_drillbook():
+    """Issue a short-lived signed token for the Drillbook module."""
+    user = db.session.get(User, session.get('user_id')) if session.get('user_id') else None
+    if not user:
+        return redirect(url_for('auth.login', next=request.full_path))
+    if not user.can_login:
+        session.clear()
+        return redirect(url_for('auth.login'))
+
+    module_role = user.module_role('drillbook')
+    if not module_role:
+        flash('Für deinen Benutzer ist das Modul Drillbook nicht freigeschaltet.', 'warning')
+        return redirect(url_for('main.index'))
+
+    serializer = _sso_serializer()
+    if serializer is None:
+        flash('Drillbook SSO ist auf dem Server noch nicht konfiguriert.', 'danger')
+        return redirect(url_for('main.index'))
+
+    token = serializer.dumps({
+        'module': 'drillbook',
+        'user_id': user.id,
+        'username': user.username,
+        'display_name': user.full_name,
+        'email': user.email,
+        'platform_role': user.role,
+        'module_role': module_role,
+    })
+    callback = f"{current_app.config['DRILLBOOK_URL']}/sso/callback?{urlencode({'token': token})}"
+    return redirect(callback)
 
 
 @bp.route('/team/switch', methods=['POST'])

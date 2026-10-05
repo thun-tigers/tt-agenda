@@ -11,6 +11,8 @@ services:
       PUSHOVER_TOKEN: ${PUSHOVER_TOKEN:-}
       PUSHOVER_USER: ${PUSHOVER_USER:-}
       PUSHOVER_URL: ${PUSHOVER_URL:-https://api.pushover.net/1/messages.json}
+      SSO_SHARED_SECRET: ${SSO_SHARED_SECRET:?SSO_SHARED_SECRET muss gesetzt sein}
+      DRILLBOOK_URL: ${DRILLBOOK_URL:-https://drillbook.thun-tigers.net}
       AUTO_CREATE_DB: "true"
       TZ: Europe/Zurich
     volumes:
@@ -27,7 +29,6 @@ services:
       POSTGRES_DB: tt_agenda
       POSTGRES_USER: tt_agenda
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tt_agenda_dev}
-      # Alpine/musl kennt keine glibc-Locales; ICU-Provider ermöglicht Schweizer Sortierung (de-CH)
       POSTGRES_INITDB_ARGS: "--locale-provider=icu --icu-locale=de-CH --lc-collate=C.UTF-8 --lc-ctype=C.UTF-8"
     volumes:
       - tt-agenda-db:/var/lib/postgresql/data
@@ -43,7 +44,6 @@ services:
 volumes:
   tt-agenda-instance:
   tt-agenda-db:
-    
 
 networks:
   cloudflared-tt:
