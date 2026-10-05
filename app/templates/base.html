@@ -19,68 +19,16 @@
   {% block head_extra %}{% endblock %}
   <style>
     {% block head_style %}{% endblock %}
-
-    /* Keep interactive controls flat and consistent across Tailwind templates. */
-    input[type="text"],
-    input[type="email"],
-    input[type="password"],
-    input[type="date"],
-    input[type="time"],
-    input[type="number"],
-    select,
-    textarea,
-    .form-control,
-    .form-select {
-      border-width: 1px !important;
-      border-style: solid !important;
-      border-color: #cbd5e1 !important;
-      border-radius: 0.5rem !important;
-      box-shadow: none !important;
-      background-image: none;
+    input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="time"], input[type="number"], select, textarea, .form-control, .form-select {
+      border-width: 1px !important; border-style: solid !important; border-color: #cbd5e1 !important;
+      border-radius: 0.5rem !important; box-shadow: none !important; background-image: none;
     }
-
-    input[type="text"]:focus,
-    input[type="email"]:focus,
-    input[type="password"]:focus,
-    input[type="date"]:focus,
-    input[type="time"]:focus,
-    input[type="number"]:focus,
-    select:focus,
-    textarea:focus,
-    .form-control:focus,
-    .form-select:focus {
-      border-color: #6366f1 !important;
-      box-shadow: 0 0 0 1px #6366f1 !important;
-      outline: none !important;
+    input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="date"]:focus, input[type="time"]:focus, input[type="number"]:focus, select:focus, textarea:focus, .form-control:focus, .form-select:focus {
+      border-color: #6366f1 !important; box-shadow: 0 0 0 1px #6366f1 !important; outline: none !important;
     }
-
-    button,
-    .btn {
-      border-width: 1px !important;
-      border-style: solid !important;
-      box-shadow: none !important;
-      transform: none !important;
-      background-image: none !important;
-    }
-
-    button:hover,
-    .btn:hover {
-      transform: none !important;
-      box-shadow: none !important;
-    }
-
-    [data-theme="dark"] input[type="text"],
-    [data-theme="dark"] input[type="email"],
-    [data-theme="dark"] input[type="password"],
-    [data-theme="dark"] input[type="date"],
-    [data-theme="dark"] input[type="time"],
-    [data-theme="dark"] input[type="number"],
-    [data-theme="dark"] select,
-    [data-theme="dark"] textarea,
-    [data-theme="dark"] .form-control,
-    [data-theme="dark"] .form-select {
-      border-color: #475569 !important;
-    }
+    button, .btn { border-width: 1px !important; border-style: solid !important; box-shadow: none !important; transform: none !important; background-image: none !important; }
+    button:hover, .btn:hover { transform: none !important; box-shadow: none !important; }
+    [data-theme="dark"] input[type="text"], [data-theme="dark"] input[type="email"], [data-theme="dark"] input[type="password"], [data-theme="dark"] input[type="date"], [data-theme="dark"] input[type="time"], [data-theme="dark"] input[type="number"], [data-theme="dark"] select, [data-theme="dark"] textarea, [data-theme="dark"] .form-control, [data-theme="dark"] .form-select { border-color: #475569 !important; }
   </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -93,6 +41,9 @@
       <div class="hidden items-center gap-1 md:flex">
         <a class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-indigo-300 no-underline" href="{{ url_for('main.index') }}">Übersicht</a>
         <a class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-indigo-300 no-underline" href="{{ url_for('main.live') }}">Live</a>
+        {% if current_user and current_user.has_module('drillbook') %}
+        <a class="rounded-lg px-3 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-indigo-300 dark:hover:bg-slate-800 no-underline" href="{{ url_for('auth.sso_drillbook') }}"><i class="bi bi-journal-richtext mr-1"></i>Drillbook</a>
+        {% endif %}
         {% if can_manage_agenda() %}
         <a class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-indigo-300 no-underline" href="{{ url_for('admin.admin_trainings') }}">Agenda verwalten</a>
         <a class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-indigo-300 no-underline" href="{{ url_for('users.index') }}">Benutzer</a>
@@ -110,10 +61,30 @@
       <div class="flex items-center gap-2 sm:gap-4">
         <a class="hidden items-center gap-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-300 no-underline sm:flex" href="{{ url_for('auth.profile') }}"><i class="bi bi-person-circle"></i>{{ session.get('display_name', session.get('username')) }}</a>
         <button id="theme-toggle" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500 dark:hover:text-indigo-300" aria-label="Darkmode umschalten" title="Darkmode umschalten"><i class="bi bi-moon-stars"></i></button>
-        <form method="post" action="{{ url_for('auth.logout') }}" class="m-0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Abmelden</button></form>
+        <button id="mobile-menu-toggle" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 md:hidden dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300" aria-label="Menü öffnen" aria-expanded="false" aria-controls="mobile-menu"><i class="bi bi-list text-xl"></i></button>
+        <form method="post" action="{{ url_for('auth.logout') }}" class="m-0 hidden md:block"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">Abmelden</button></form>
       </div>
       {% endif %}
     </div>
+    {% if session.get('user_id') %}
+    <div id="mobile-menu" class="hidden border-t border-slate-200 bg-white px-4 py-3 md:hidden dark:border-slate-800 dark:bg-slate-900">
+      <div class="mx-auto grid max-w-7xl gap-1">
+        <a class="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-indigo-50 dark:hover:bg-slate-800" href="{{ url_for('main.index') }}"><i class="bi bi-house mr-2"></i>Übersicht</a>
+        <a class="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-indigo-50 dark:hover:bg-slate-800" href="{{ url_for('main.live') }}"><i class="bi bi-broadcast mr-2"></i>Live</a>
+        {% if current_user and current_user.has_module('drillbook') %}
+        <a class="rounded-lg px-3 py-2.5 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-slate-800" href="{{ url_for('auth.sso_drillbook') }}"><i class="bi bi-journal-richtext mr-2"></i>Drillbook</a>
+        {% endif %}
+        {% if can_manage_agenda() %}
+        <a class="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-indigo-50 dark:hover:bg-slate-800" href="{{ url_for('admin.admin_trainings') }}"><i class="bi bi-calendar2-check mr-2"></i>Agenda verwalten</a>
+        <a class="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-indigo-50 dark:hover:bg-slate-800" href="{{ url_for('users.index') }}"><i class="bi bi-people mr-2"></i>Benutzer</a>
+        <a class="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-indigo-50 dark:hover:bg-slate-800" href="{{ url_for('admin.admin_backup') }}"><i class="bi bi-database-check mr-2"></i>Backup</a>
+        <a class="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-indigo-50 dark:hover:bg-slate-800" href="{{ url_for('admin.admin_help') }}"><i class="bi bi-question-circle mr-2"></i>Hilfe</a>
+        {% endif %}
+        <a class="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-indigo-50 dark:hover:bg-slate-800" href="{{ url_for('auth.profile') }}"><i class="bi bi-person-circle mr-2"></i>{{ session.get('display_name', session.get('username')) }}</a>
+        <form method="post" action="{{ url_for('auth.logout') }}" class="mt-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-left text-sm font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"><i class="bi bi-box-arrow-right mr-2"></i>Abmelden</button></form>
+      </div>
+    </div>
+    {% endif %}
   </nav>
   <main class="mx-auto min-h-[calc(100vh-11rem)] max-w-7xl px-4 py-8 lg:px-8">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -143,17 +114,20 @@
       button.addEventListener('click', () => update(!root.classList.contains('dark')));
     })();
     (() => {
+      const button = document.getElementById('mobile-menu-toggle');
+      const menu = document.getElementById('mobile-menu');
+      if (!button || !menu) return;
+      button.addEventListener('click', () => {
+        const open = menu.classList.toggle('hidden') === false;
+        button.setAttribute('aria-expanded', String(open));
+        button.querySelector('i').className = open ? 'bi bi-x-lg text-lg' : 'bi bi-list text-xl';
+      });
+    })();
+    (() => {
       const menu = document.getElementById('admin-menu');
       if (!menu) return;
-      document.addEventListener('click', (event) => {
-        if (menu.open && !menu.contains(event.target)) menu.open = false;
-      });
-      menu.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && menu.open) {
-          menu.open = false;
-          menu.querySelector('summary').focus();
-        }
-      });
+      document.addEventListener('click', (event) => { if (menu.open && !menu.contains(event.target)) menu.open = false; });
+      menu.addEventListener('keydown', (event) => { if (event.key === 'Escape' && menu.open) { menu.open = false; menu.querySelector('summary').focus(); } });
     })();
   </script>
   {% block extra_js %}{% endblock %}
