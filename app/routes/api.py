@@ -5,7 +5,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from ..extensions import db
 from ..models import User, Training, Activity, TrainingInstance, ActivityInstance, AgendaCategory
-from ..utils import get_upcoming_trainings, get_past_trainings
+from ..utils import get_activity_behavior, get_upcoming_trainings, get_past_trainings
 
 _CATEGORY_KEY_RE = re.compile(r'^[a-z0-9_-]{1,40}$')
 MAX_UPCOMING_LIMIT = 100
@@ -102,6 +102,19 @@ def _serialize_training(item):
         for key in ('required_for', 'allowed_for', 'show_presence_tracking'):
             if key in overrides:
                 category_payload[key] = overrides[key]
+    activities = []
+    for activity in item.get('activities') or []:
+        activities.append({
+            'id': activity.id,
+            'type': activity.activity_type,
+            'behavior': get_activity_behavior(activity.activity_type),
+            'start_time': activity.start_time.strftime('%H:%M') if activity.start_time else None,
+            'duration_minutes': activity.duration,
+            'order': activity.order_index,
+            'position_groups': activity.position_groups or [],
+            'topic': activity.topic,
+            'topics': activity.topics_json or {},
+        })
     return {
         'id': occurrence_id,
         'occurrence_id': occurrence_id,
@@ -120,6 +133,7 @@ def _serialize_training(item):
         'is_running': item.get('is_running', False),
         'is_upcoming': item.get('is_upcoming', False),
         'activities_count': item.get('activities_count', 0),
+        'activities': activities,
         'is_individual': item.get('is_individual', False),
         'is_cancelled': item.get('is_cancelled', False),
         'is_free': item.get('is_free', False),

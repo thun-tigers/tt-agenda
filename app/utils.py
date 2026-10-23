@@ -511,6 +511,7 @@ def get_upcoming_trainings(trainings: List[Training], activities_by_training: Di
                 'is_running': is_running,
                 'is_upcoming': is_upcoming,
                 'activities_count': len(display_activities),
+                'activities': display_activities,
                 'is_individual': bool(instance and instance.status == 'active'),
                 'is_cancelled': is_cancelled,
                 'is_free': bool(training.is_hidden)
@@ -570,6 +571,7 @@ def get_past_trainings(trainings: List[Training], activities_by_training: Dict[i
                 'is_running': False,
                 'is_upcoming': False,
                 'activities_count': len(display_activities),
+                'activities': display_activities,
                 'is_individual': bool(instance and instance.status == 'active'),
                 'is_cancelled': is_cancelled,
                 'is_free': bool(training.is_hidden),
